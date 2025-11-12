@@ -1,0 +1,1 @@
+Modelos de dados (Freezed + JSON).

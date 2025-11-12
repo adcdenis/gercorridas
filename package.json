@@ -1,0 +1,9 @@
+{
+  "name": "gercorridas",
+  "private": true,
+  "description": "Scripts de conveniência para rodar no Android",
+  "scripts": {
+    "android": "powershell -ExecutionPolicy Bypass -File scripts/run_android.ps1",
+    "android:release": "powershell -ExecutionPolicy Bypass -File scripts/run_android.ps1 -Release"
+  }
+}

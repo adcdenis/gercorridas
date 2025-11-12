@@ -1,0 +1,1 @@
+Arquivos de banco local (Drift/SQLite) e DAOs.

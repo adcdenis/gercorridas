@@ -1,0 +1,1 @@
+Repositórios de acesso a dados e regras de persistência.
