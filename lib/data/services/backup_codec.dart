@@ -6,10 +6,26 @@ import 'package:gercorridas/data/database/app_database.dart';
 class BackupCodec {
   static DateTime _dateFromJson(dynamic v) {
     if (v == null) return DateTime.fromMillisecondsSinceEpoch(0);
-    if (v is String) return DateTime.parse(v);
-    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
-    if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
-    throw ArgumentError('Unsupported date value: $v');
+    late final DateTime dt;
+    if (v is String) {
+      dt = DateTime.parse(v);
+    } else if (v is int) {
+      dt = DateTime.fromMillisecondsSinceEpoch(v);
+    } else if (v is num) {
+      dt = DateTime.fromMillisecondsSinceEpoch(v.toInt());
+    } else {
+      throw ArgumentError('Unsupported date value: $v');
+    }
+    return DateTime(
+      dt.year,
+      dt.month,
+      dt.day,
+      dt.hour,
+      dt.minute,
+      dt.second,
+      dt.millisecond,
+      dt.microsecond,
+    );
   }
   // Histórico removido do backup: não há cálculo de órfãos ou filtros
   /// Gera um Map pronto para JSON contendo todas as entidades.

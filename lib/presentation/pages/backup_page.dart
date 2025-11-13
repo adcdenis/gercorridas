@@ -6,11 +6,18 @@ import 'package:share_plus/share_plus.dart';
 import 'package:gercorridas/core/text_sanitizer.dart';
 // Removida a seção de nuvem desta tela. Recursos de nuvem foram movidos para CloudBackupPage.
 
-class BackupPage extends ConsumerWidget {
+class BackupPage extends ConsumerStatefulWidget {
   const BackupPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BackupPage> createState() => _BackupPageState();
+}
+
+class _BackupPageState extends ConsumerState<BackupPage> {
+  void _refresh() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
     final backup = ref.watch(backupServiceProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -31,6 +38,7 @@ class BackupPage extends ConsumerWidget {
               FilledButton.icon(
                 onPressed: () async {
                   final res = await backup.export();
+                  _refresh();
                   if (context.mounted) {
                     ScaffoldMessenger.of(
                       context,
@@ -45,10 +53,11 @@ class BackupPage extends ConsumerWidget {
                   onPressed: () async {
                     try {
                       final path = await backup.exportPath();
+                      _refresh();
                       final now = DateTime.now();
                       final ts =
                           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-          final subject = sanitizeForShare('Backup GerCorridas');
+                      final subject = sanitizeForShare('Backup GerCorridas');
                       final text = sanitizeForShare('Backup exportado em $ts');
                       await Share.shareXFiles(
                         [XFile(path, mimeType: 'application/json')],
@@ -70,6 +79,9 @@ class BackupPage extends ConsumerWidget {
                 onPressed: () async {
                   try {
                     final imported = await backup.import();
+                    ref.invalidate(corridasProvider);
+                    ref.invalidate(categoriesProvider);
+                    _refresh();
                     if (context.mounted) {
                       ScaffoldMessenger.of(
                         context,
@@ -90,7 +102,7 @@ class BackupPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Nome do arquivo: lembre_backup_YYYYMMDD_HHMMSS.json (com carimbo de data/hora).',
+            'Nome do arquivo: gercorridas_backup_YYYYMMDD_HHMMSS.json (com carimbo de data/hora).',
           ),
           const SizedBox(height: 8),
           const Text('Android/iOS: salvo no diretório de documentos do app.'),
@@ -104,7 +116,7 @@ class BackupPage extends ConsumerWidget {
           const SelectableText(
             'Raiz:\n'
             '- version: inteiro (obrigatório)\n'
-            '- counters: lista (obrigatório; lista de corridas)\n'
+            '- counters: lista (obrigatório; corridas)\n'
             '- categories: lista (obrigatório)\n'
             '\n'
             'Corrida:\n'
@@ -113,6 +125,11 @@ class BackupPage extends ConsumerWidget {
             '- description: string (opcional)\n'
             '- eventDate: string ISO-8601 (obrigatório)\n'
             '- category: string (opcional)\n'
+            '- status: string (opcional; ex.: inscrito, concluida, cancelada, nao_pude_ir)\n'
+            '- distanceKm: número (opcional)\n'
+            '- price: número (opcional)\n'
+            '- registrationUrl: string (opcional)\n'
+            '- finishTime: string (opcional; HH:mm:ss)\n'
             '- createdAt: string ISO-8601 (obrigatório)\n'
             '- updatedAt: string ISO-8601 (opcional)\n\n'
             'Category:\n'
@@ -137,18 +154,22 @@ class BackupPage extends ConsumerWidget {
               '  "counters": [\n'
               '    {\n'
               '      "id": 1,\n'
-              '      "name": "Aniversário",\n'
-              '      "description": "Aniversário João",\n'
-              '      "eventDate": "2025-05-20T00:00:00.000Z",\n'
-              '      "category": "Pessoal",\n'
+              '      "name": "Maratona Internacional de Pomerode",\n'
+              '      "description": "Minha primeira maratona",\n'
+              '      "eventDate": "2025-10-26T06:00:00.000Z",\n'
+              '      "category": "Provas",\n'
+              '      "status": "concluida",\n'
+              '      "distanceKm": 42.0,\n'
+              '      "price": 180.00,\n'
+              '      "registrationUrl": "https://exemplo.com/inscricao",\n'
+              '      "finishTime": "03:49:53",\n'
               '      "createdAt": "2025-01-01T10:00:00.000Z",\n'
               '      "updatedAt": null\n'
               '    }\n'
               '  ],\n'
               '  "categories": [\n'
-              '    { "id": 1, "name": "Pessoal", "normalized": "pessoal" }\n'
-              '  ],\n'
-              '  \n'
+              '    { "id": 1, "name": "Provas", "normalized": "provas" }\n'
+              '  ]\n'
               '}\n',
               style: TextStyle(fontFamily: 'monospace', fontSize: 13),
             ),
@@ -190,7 +211,7 @@ class BackupPage extends ConsumerWidget {
                         .split('\\')
                         .last; // suporta separadores diferentes
                     String? subtitle;
-                    final re = RegExp(r'lembre_backup_(\d{8})_(\d{6})');
+                    final re = RegExp(r'gercorridas_backup_(\d{8})_(\d{6})');
                     final m = re.firstMatch(filename);
                     if (m != null) {
                       final d = m.group(1)!; // YYYYMMDD
@@ -205,6 +226,9 @@ class BackupPage extends ConsumerWidget {
                         onPressed: () async {
                           try {
                             final msg = await backup.importFromPath(path);
+                            ref.invalidate(corridasProvider);
+                            ref.invalidate(categoriesProvider);
+                            _refresh();
                             if (context.mounted) {
                               ScaffoldMessenger.of(
                                 context,

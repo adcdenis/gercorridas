@@ -88,6 +88,7 @@ class AppShell extends ConsumerWidget {
                 destinations: const [
                   NavigationRailDestination(icon: Text('📋', style: TextStyle(fontSize: 20)), selectedIcon: Text('📋', style: TextStyle(fontSize: 20)), label: Text('Dashboard')),
                   NavigationRailDestination(icon: Text('🏃', style: TextStyle(fontSize: 20)), selectedIcon: Text('🏃', style: TextStyle(fontSize: 20)), label: Text('Corridas')),
+                  NavigationRailDestination(icon: Text('📊', style: TextStyle(fontSize: 20)), selectedIcon: Text('📊', style: TextStyle(fontSize: 20)), label: Text('Estatísticas')),
                   NavigationRailDestination(icon: Text('📈', style: TextStyle(fontSize: 20)), selectedIcon: Text('📈', style: TextStyle(fontSize: 20)), label: Text('Relatórios')),
                   NavigationRailDestination(icon: Text('🔄', style: TextStyle(fontSize: 20)), selectedIcon: Text('🔄', style: TextStyle(fontSize: 20)), label: Text('Backup')),
                   NavigationRailDestination(icon: Text('☁️', style: TextStyle(fontSize: 20)), selectedIcon: Text('☁️', style: TextStyle(fontSize: 20)), label: Text('Backup na Nuvem')),
@@ -116,9 +117,10 @@ class AppShell extends ConsumerWidget {
 
   int _selectedIndexForLocation(String location) {
     if (location.startsWith('/corridas')) return 1;
-    if (location.startsWith('/reports')) return 2;
-    if (location.startsWith('/backup')) return 3;
-    if (location.startsWith('/cloud-backup')) return 4;
+    if (location.startsWith('/estatisticas')) return 2;
+    if (location.startsWith('/reports')) return 3;
+    if (location.startsWith('/backup')) return 4;
+    if (location.startsWith('/cloud-backup')) return 5;
     return 0; // dashboard default
   }
 
@@ -131,12 +133,15 @@ class AppShell extends ConsumerWidget {
         context.go('/corridas');
         break;
       case 2:
-        context.go('/reports');
+        context.go('/estatisticas');
         break;
       case 3:
-        context.go('/backup');
+        context.go('/reports');
         break;
       case 4:
+        context.go('/backup');
+        break;
+      case 5:
         context.go('/cloud-backup');
         break;
     }
@@ -182,11 +187,19 @@ class _AppDrawer extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: const Text('📊', style: TextStyle(fontSize: 20)),
+              title: const Text('Estatísticas'),
+              onTap: () {
+                Scaffold.maybeOf(context)?.closeDrawer();
+                onNavigateIndex(2);
+              },
+            ),
+            ListTile(
               leading: const Text('📈', style: TextStyle(fontSize: 20)),
               title: const Text('Relatórios'),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(2);
+                onNavigateIndex(3);
               },
             ),
             ListTile(
@@ -194,7 +207,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('Backup'),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(3);
+                onNavigateIndex(4);
               },
             ),
             ListTile(
@@ -202,7 +215,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('Backup na Nuvem'),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(4);
+                onNavigateIndex(5);
               },
             ),
             const Divider(height: 1),

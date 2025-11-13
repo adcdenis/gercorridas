@@ -36,34 +36,10 @@ class BackupServiceImpl implements BackupService {
         '${now.hour.toString().padLeft(2, '0')}'
         '${now.minute.toString().padLeft(2, '0')}'
         '${now.second.toString().padLeft(2, '0')}';
-    final filename = 'lembre_backup_$ts.json';
+    final filename = 'gercorridas_backup_$ts.json';
     final file = File('${dir.path}${Platform.pathSeparator}$filename');
 
-    final counters = await db.getAllCounters();
-    final categories = await db.getAllCategories();
-
-    final json = jsonEncode({
-      'version': 1,
-      'counters': counters
-          .map((c) => {
-                'id': c.id,
-                'name': c.name,
-                'description': c.description,
-                'eventDate': c.eventDate.toIso8601String(),
-                'category': c.category,
-                'createdAt': c.createdAt.toIso8601String(),
-                'updatedAt': c.updatedAt?.toIso8601String(),
-              })
-          .toList(),
-      'categories': categories
-          .map((cat) => {
-                'id': cat.id,
-                'name': cat.name,
-                'normalized': cat.normalized,
-              })
-          .toList(),
-      // Histórico removido do backup
-    });
+    final json = jsonEncode(await BackupCodec.encode(db));
 
     await file.writeAsString(json);
     return file.path;
@@ -113,7 +89,7 @@ class BackupServiceImpl implements BackupService {
     if (!await d.exists()) return [];
     final files = await d
         .list()
-        .where((e) => e is File && e.path.endsWith('.json') && RegExp(r'lembre_backup_\d{8}_\d{6}\.json').hasMatch(e.path.split(Platform.pathSeparator).last))
+        .where((e) => e is File && e.path.endsWith('.json') && RegExp(r'gercorridas_backup_\d{8}_\d{6}\.json').hasMatch(e.path.split(Platform.pathSeparator).last))
         .cast<File>()
         .toList();
     files.sort((a, b) {

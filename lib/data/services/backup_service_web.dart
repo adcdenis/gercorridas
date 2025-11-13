@@ -20,31 +20,7 @@ class BackupServiceImpl implements BackupService {
 
   @override
   Future<String> export() async {
-    final counters = await db.getAllCounters();
-    final categories = await db.getAllCategories();
-
-    final json = jsonEncode({
-      'version': 1,
-      'counters': counters
-          .map((c) => {
-                'id': c.id,
-                'name': c.name,
-                'description': c.description,
-                'eventDate': c.eventDate.toIso8601String(),
-                'category': c.category,
-                'createdAt': c.createdAt.toIso8601String(),
-                'updatedAt': c.updatedAt?.toIso8601String(),
-              })
-          .toList(),
-      'categories': categories
-          .map((cat) => {
-                'id': cat.id,
-                'name': cat.name,
-                'normalized': cat.normalized,
-              })
-          .toList(),
-      // Histórico removido do backup
-    });
+    final json = jsonEncode(await BackupCodec.encode(db));
 
     final bytes = utf8.encode(json);
     final blob = html.Blob([bytes], 'application/json');
@@ -57,7 +33,7 @@ class BackupServiceImpl implements BackupService {
         '${now.hour.toString().padLeft(2, '0')}'
         '${now.minute.toString().padLeft(2, '0')}'
         '${now.second.toString().padLeft(2, '0')}';
-    final filename = 'lembre_backup_$ts.json';
+    final filename = 'gercorridas_backup_$ts.json';
     html.AnchorElement(href: url)
       ..download = filename
       ..click();

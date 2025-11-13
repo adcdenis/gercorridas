@@ -5,6 +5,7 @@ import '../pages/corrida_detail_page.dart';
 import '../pages/corrida_form_page.dart';
 import '../pages/corrida_list_page.dart';
 import '../pages/reports_page.dart';
+import '../pages/statistics_page.dart';
 import '../pages/backup_page.dart';
 import '../pages/cloud_backup_page.dart';
 import '../widgets/app_shell.dart';
@@ -25,6 +26,11 @@ class AppRouter {
             path: '/corridas',
             name: 'corridas',
             pageBuilder: (context, state) => const MaterialPage(child: CorridaListPage()),
+          ),
+          GoRoute(
+            path: '/estatisticas',
+            name: 'estatisticas',
+            pageBuilder: (context, state) => const MaterialPage(child: StatisticsPage()),
           ),
           GoRoute(
             path: '/corrida/new',

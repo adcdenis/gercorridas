@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/state/providers.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
+
+  static final _selectedYearProvider = StateProvider<int>((ref) => DateTime.now().year);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,67 +22,65 @@ class DashboardPage extends ConsumerWidget {
         error: (e, st) => Center(child: Text('Erro ao carregar: $e')),
         data: (counters) {
           final now = DateTime.now();
-          DateTime effectiveDate(DateTime base) {
-            return base;
-          }
+          DateTime effectiveDate(DateTime base) => base;
 
-          // Métricas principais
-          final total = counters.length;
-          final past = counters.where((c) => isPast(effectiveDate(c.eventDate), now: now)).length;
-          final future = counters.where((c) => !isPast(effectiveDate(c.eventDate), now: now)).length;
+          final years = {
+            for (final c in counters) c.eventDate.year
+          }..add(DateTime.now().year);
+          final sortedYears = years.toList()..sort();
 
-          // Semana atual (seg->dom) e próxima semana
-          final startWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
-          final endWeek = startWeek.add(const Duration(days: 7));
-          final startNextWeek = endWeek;
-          final endNextWeek = startNextWeek.add(const Duration(days: 7));
-          bool inRange(DateTime d, DateTime a, DateTime b) => !d.isBefore(a) && d.isBefore(b);
-          final weekCount = counters.where((c) => inRange(effectiveDate(c.eventDate), startWeek, endWeek)).length;
-          final nextWeekCount = counters.where((c) => inRange(effectiveDate(c.eventDate), startNextWeek, endNextWeek)).length;
+          final selectedYear = ref.watch(_selectedYearProvider);
+          final filteredByYear = counters.where((c) => c.eventDate.year == selectedYear).toList();
+          int countStatus(String s) => filteredByYear.where((c) => c.status == s).length;
+          final total = filteredByYear.length;
+          final inscritas = countStatus('inscrito');
+          final concluidas = countStatus('concluida');
+          final pretendo = countStatus('pretendo_ir');
+          final canceladas = countStatus('cancelada');
+          final naoPude = countStatus('nao_pude_ir');
 
-          // Mês atual
-          final startMonth = DateTime(now.year, now.month, 1);
-          final endMonth = DateTime(now.year, now.month + 1, 1);
-          final monthCount = counters.where((c) => inRange(effectiveDate(c.eventDate), startMonth, endMonth)).length;
-
-          // Próximos eventos (próximos 5)
-          final upcoming = counters
+          final upcomingInscritas = filteredByYear
               .map((c) => (c, effectiveDate(c.eventDate)))
-              .where((t) => !isPast(t.$2, now: now))
+              .where((t) => t.$1.status == 'inscrito' && !isPast(t.$2, now: now))
               .toList()
             ..sort((a, b) => a.$2.compareTo(b.$2));
-          final nextFive = upcoming.take(5).toList();
-
-          // Distribuição por categoria
-          final Map<String, int> byCategory = {};
-          for (final c in counters) {
-            final k = (c.category ?? 'Sem categoria');
-            byCategory[k] = (byCategory[k] ?? 0) + 1;
-          }
-          final categoryEntries = byCategory.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value));
-
-          // Paleta distinta por categoria (evita cores iguais)
-          final labels = categoryEntries.map((e) => e.key).toList();
-          final palette = _distinctPalette(context, labels.length);
-          final Map<String, Color> colorsByCategory = {
-            for (var i = 0; i < labels.length; i++) labels[i]: palette[i]
-          };
 
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                Row(children: const [
+                  Text('📊', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 8),
+                  Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                ]),
                 const SizedBox(height: 8),
-                Text('Visão completa das suas corridas e eventos', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
+                const Text('Visão geral do sistema de corridas'),
+                const SizedBox(height: 16),
+
+                Row(children: [
+                  const Text('Ano:'),
+                  const SizedBox(width: 8),
+                  DropdownButton<int>(
+                    value: selectedYear,
+                    items: [
+                      for (final y in sortedYears)
+                        DropdownMenuItem(value: y, child: Text('$y'))
+                    ],
+                    onChanged: (v) {
+                      if (v != null) {
+                        ref.read(_selectedYearProvider.notifier).state = v;
+                      }
+                    },
+                  ),
+                ]),
                 const SizedBox(height: 16),
 
                 // Cards principais (grid: garante 2 colunas no mobile)
                 LayoutBuilder(builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 600;
-                  final cross = isNarrow ? 2 : 4;
-                  final extent = isNarrow ? 110.0 : 110.0;
+                  final isNarrow = constraints.maxWidth < 900;
+                  final cross = 2;
+                  final extent = isNarrow ? 120.0 : 120.0;
                   return GridView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -90,93 +91,77 @@ class DashboardPage extends ConsumerWidget {
                       mainAxisExtent: extent,
                     ),
                     children: [
-  _statCard(context, title: 'Total', value: total, color: cs.primaryContainer, emoji: '📋', width: double.infinity),
-  _statCard(context, title: 'Passados', value: past, color: cs.secondaryContainer, emoji: '🕰️', width: double.infinity),
-  _statCard(context, title: 'Futuros', value: future, color: cs.tertiaryContainer, emoji: '🗓️', width: double.infinity),
-  _statCard(context, title: 'Esta Semana', value: weekCount, color: Colors.amber.shade100, emoji: '📅', width: double.infinity),
-  _statCard(context, title: 'Este Mês', value: monthCount, color: Colors.grey.shade200, emoji: '🗓️', width: double.infinity),
-  _statCard(context, title: 'Próx. Semana', value: nextWeekCount, color: Colors.orange.shade100, emoji: '⏭️', width: double.infinity),
-  _statCard(context, title: 'Vencidos', value: past, color: cs.errorContainer, emoji: '⚠️', width: double.infinity),
+                      _statCard(context, title: 'Total', value: total, color: cs.surface, emoji: '📈', width: double.infinity),
+                      _statCard(context, title: 'Inscritas', value: inscritas, color: cs.surface, emoji: '👥', width: double.infinity),
+                      _statCard(context, title: 'Concluídas', value: concluidas, color: cs.surface, emoji: '🏆', width: double.infinity),
+                      _statCard(context, title: 'Pretendo Ir', value: pretendo, color: cs.surface, emoji: '🎯', width: double.infinity),
+                      _statCard(context, title: 'Canceladas', value: canceladas, color: cs.surface, emoji: '✖️', width: double.infinity),
+                      _statCard(context, title: 'Não Pude Ir', value: naoPude, color: cs.surface, emoji: '⏱️', width: double.infinity),
                     ],
                   );
                 }),
 
                 const SizedBox(height: 16),
 
-                // Grade inferior: próximos eventos, barras de categoria, donut
-                LayoutBuilder(builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 1100;
-                  final leftPanel = _panelCard(
-                    context,
-                    title: 'Próximas Corridas',
-                    emoji: '⏳',
-                    child: Column(
-                      children: [
-                        for (final t in nextFive)
-                          _upcomingTile(context, t.$1.name, t.$1.category, t.$2, now),
-                        if (nextFive.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('Sem corridas futuras', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
-                          ),
-                      ],
-                    ),
-                  );
+                _panelCard(
+                  context,
+                  title: 'Próximas Corridas Inscritas',
+                  emoji: '⏲️',
+                  child: StreamBuilder<DateTime>(
+                    stream: Stream<DateTime>.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
+                    initialData: DateTime.now(),
+                    builder: (context, snap) {
+                      final refNow = snap.data ?? now;
+                      if (upcomingInscritas.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text('Sem corridas inscritas futuras', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
+                        );
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: upcomingInscritas.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (ctx, i) {
+                          final c = upcomingInscritas[i].$1;
+                          final eff = upcomingInscritas[i].$2;
+                          return _inscritaTile(context, c.name, c.category, c.distanceKm, eff, refNow);
+                        },
+                      );
+                    },
+                  ),
+                ),
 
-                  final middlePanel = _panelCard(
-                    context,
-                    title: 'Distribuição por Categoria',
-                    emoji: '📊',
-                    child: Column(
-                      children: [
-                        for (final e in categoryEntries)
-                          _categoryBar(
-                            context,
-                            label: e.key,
-                            value: e.value,
-                            max: total,
-                            color: colorsByCategory[e.key]!,
-                          ),
-                        if (categoryEntries.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('Sem categorias', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
-                          ),
-                      ],
-                    ),
-                  );
-
-                  final rightPanel = _panelCard(
-                    context,
-                    title: 'Proporção por Categoria',
-                    emoji: '🥧',
-                    child: SizedBox(
-                      height: 220,
-                      child: _DonutChart(
-                        data: byCategory,
-                        total: total,
-                        colorsByCategory: colorsByCategory,
-                      ),
-                    ),
-                  );
-
-                  if (isWide) {
-                    return Row(children: [
-                      Expanded(child: leftPanel),
-                      const SizedBox(width: 12),
-                      Expanded(child: middlePanel),
-                      const SizedBox(width: 12),
-                      Expanded(child: rightPanel),
-                    ]);
-                  }
-                  return Column(children: [
-                    leftPanel,
-                    const SizedBox(height: 12),
-                    middlePanel,
-                    const SizedBox(height: 12),
-                    rightPanel,
-                  ]);
-                }),
+                const SizedBox(height: 16),
+                _panelCard(
+                  context,
+                  title: 'Últimas Corridas Concluídas',
+                  emoji: '🏁',
+                  child: Builder(builder: (context) {
+                    final concluidas = filteredByYear
+                        .where((c) => c.status == 'concluida')
+                        .toList()
+                      ..sort((a, b) => b.eventDate.compareTo(a.eventDate));
+                    final ultimas = concluidas.take(5).toList();
+                    if (ultimas.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text('Sem corridas concluídas', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7))),
+                      );
+                    }
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: ultimas.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) {
+                        final c = ultimas[i];
+                        return _concluidaTile(context, c.name, c.category, c.distanceKm, c.eventDate, c.finishTime, c.price);
+                      },
+                    );
+                  }),
+                ),
               ],
             ),
           );
@@ -213,13 +198,17 @@ class DashboardPage extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 18)),
+              Padding(
+                padding: const EdgeInsets.only(top: 2.0),
+                child: Text(emoji, style: const TextStyle(fontSize: 18)),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     const SizedBox(height: 2),
                     Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: onColor)),
@@ -265,49 +254,131 @@ class DashboardPage extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _upcomingTile(BuildContext context, String name, String? category, DateTime date, DateTime now) {
+  
+  Widget _inscritaTile(BuildContext context, String name, String? category, double distanceKm, DateTime date, DateTime now) {
     final cs = Theme.of(context).colorScheme;
     final df = DateFormat('dd/MM/yyyy');
-    final daysLeft = durationDiff(now, date).days; // usa duração normalizada
+    final tf = DateFormat('HH:mm');
+    final comps = calendarDiff(now, date);
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))],
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Wrap(spacing: 16, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                  Row(children: [const Icon(Icons.calendar_month, size: 16), const SizedBox(width: 6), Text(df.format(date))]),
+                  Row(children: [const Icon(Icons.access_time, size: 16), const SizedBox(width: 6), Text(tf.format(date))]),
+                  Row(children: [const Icon(Icons.route, size: 16), const SizedBox(width: 6), Text('${distanceKm.toStringAsFixed(0)} km')]),
+                ]),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          Row(children: [
+            const Spacer(),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Faltam:', style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    _countBox('${comps.days}', 'dias', cs),
+                    _countBox('${comps.hours}', 'hrs', cs),
+                    _countBox('${comps.minutes}', 'min', cs),
+                    _countBox('${comps.seconds}', 'seg', cs),
+                  ]),
+                ]),
               ),
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 12,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(df.format(date), style: TextStyle(color: cs.onSurfaceVariant)),
-                  if (category != null)
-                    Chip(
-                      avatar: const Text('🏷️'),
-                      label: Text(category),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                ],
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              tooltip: 'Compartilhar',
+              onPressed: () {
+                final text = '${name}\n${df.format(date)} ${tf.format(date)}\n${category ?? ''}\n${distanceKm.toStringAsFixed(0)} km';
+                Share.share(text, subject: 'Corrida: $name');
+              },
+              icon: const Icon(Icons.share),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _countBox(String value, String label, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+      child: Column(children: [
+        Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface)),
+        Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  Widget _concluidaTile(BuildContext context, String name, String? category, double distanceKm, DateTime date, String? finishTime, double? price) {
+    final cs = Theme.of(context).colorScheme;
+    final df = DateFormat('dd/MM/yyyy');
+    final tf = DateFormat('HH:mm');
+    final priceStr = (price == null || price == 0)
+        ? 'Gratuita'
+        : NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(price);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.purple.shade100, borderRadius: BorderRadius.circular(14)),
+              child: Text(
+                'Concluído',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.purple.shade700),
               ),
-            ]),
-          ),
-          Text('$daysLeft dias', style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [const Icon(Icons.calendar_month, size: 16), const SizedBox(width: 6), Text(df.format(date))]),
+                const SizedBox(height: 8),
+                Row(children: [const Icon(Icons.adjust, size: 16), const SizedBox(width: 6), Text('${distanceKm.toStringAsFixed(0)} km')]),
+                const SizedBox(height: 8),
+                Row(children: [const Icon(Icons.emoji_events_outlined, size: 16), const SizedBox(width: 6), Text(priceStr)]),
+              ]),
+            ),
+            SizedBox(
+              width: 180,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [const Icon(Icons.access_time, size: 16), const SizedBox(width: 6), Text(tf.format(date))]),
+                const SizedBox(height: 8),
+                Row(children: [const Icon(Icons.timelapse, size: 16), const SizedBox(width: 6), Text(finishTime?.isNotEmpty == true ? finishTime! : '-')]),
+              ]),
+            ),
+          ]),
         ],
       ),
     );
