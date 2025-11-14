@@ -360,8 +360,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                       return matchesSearch && matchesCat;
                     }).toList();
 
-                // Ordena alfabeticamente por nome (case-insensitive)
-                filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+                filtered.sort((a, b) => b.eventDate.compareTo(a.eventDate));
 
                 if (filtered.isEmpty) {
                   return const Expanded(child: Center(child: Text('Nenhuma corrida encontrada.')));
