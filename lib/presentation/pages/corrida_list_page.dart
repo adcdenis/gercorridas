@@ -39,6 +39,24 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
         return s;
     }
   }
+  IconData _iconForStatus(String s) {
+    switch (s) {
+      case 'pretendo_ir':
+        return Icons.event;
+      case 'inscrito':
+        return Icons.assignment_turned_in;
+      case 'concluida':
+        return Icons.emoji_events_outlined;
+      case 'cancelada':
+        return Icons.cancel;
+      case 'nao_pude_ir':
+        return Icons.not_interested;
+      case 'na_duvida':
+        return Icons.help_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
   
   void _shareCounter(BuildContext context, Counter counter, DateTime effectiveDate, bool isFuture) {
     final now = DateTime.now();
@@ -536,9 +554,16 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                                        child: Text(
-                                          _labelForStatus(c.status),
-                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(_iconForStatus(c.status), size: 14, color: scheme.onPrimaryContainer),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _labelForStatus(c.status),
+                                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       if ((c.registrationUrl?.isNotEmpty ?? false) && (c.status == 'pretendo_ir' || c.status == 'na_duvida'))

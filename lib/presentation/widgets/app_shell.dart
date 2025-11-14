@@ -54,6 +54,7 @@ class AppShell extends ConsumerWidget {
       },
       child: LayoutBuilder(builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
+        final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
         final title = Row(
           children: const [
             Icon(Icons.directions_run),
@@ -63,7 +64,6 @@ class AppShell extends ConsumerWidget {
         );
 
       if (isWide) {
-        final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
         return Scaffold(
           appBar: AppBar(title: title, actions: const [
             Padding(
@@ -81,17 +81,32 @@ class AppShell extends ConsumerWidget {
                 labelType: (constraints.maxWidth >= 1200)
                     ? NavigationRailLabelType.none
                     : NavigationRailLabelType.all,
+                useIndicator: true,
+                elevation: 2,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+                leading: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.directions_run),
+                      SizedBox(width: 8),
+                      Text('GerCorridas', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
                 trailing: const Padding(
                   padding: EdgeInsets.all(12),
                   child: _VersionFooter(),
                 ),
                 destinations: const [
-                  NavigationRailDestination(icon: Text('📋', style: TextStyle(fontSize: 20)), selectedIcon: Text('📋', style: TextStyle(fontSize: 20)), label: Text('Dashboard')),
-                  NavigationRailDestination(icon: Text('🏃', style: TextStyle(fontSize: 20)), selectedIcon: Text('🏃', style: TextStyle(fontSize: 20)), label: Text('Corridas')),
-                  NavigationRailDestination(icon: Text('📊', style: TextStyle(fontSize: 20)), selectedIcon: Text('📊', style: TextStyle(fontSize: 20)), label: Text('Estatísticas')),
-                  NavigationRailDestination(icon: Text('📈', style: TextStyle(fontSize: 20)), selectedIcon: Text('📈', style: TextStyle(fontSize: 20)), label: Text('Relatórios')),
-                  NavigationRailDestination(icon: Text('🔄', style: TextStyle(fontSize: 20)), selectedIcon: Text('🔄', style: TextStyle(fontSize: 20)), label: Text('Backup')),
-                  NavigationRailDestination(icon: Text('☁️', style: TextStyle(fontSize: 20)), selectedIcon: Text('☁️', style: TextStyle(fontSize: 20)), label: Text('Backup na Nuvem')),
+                  NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
+                  NavigationRailDestination(icon: Icon(Icons.directions_run), selectedIcon: Icon(Icons.directions_run), label: Text('Corridas')),
+                  NavigationRailDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: Text('Estatísticas')),
+                  NavigationRailDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: Text('Relatórios')),
+                  NavigationRailDestination(icon: Icon(Icons.sync_alt), selectedIcon: Icon(Icons.sync), label: Text('Backup')),
+                  NavigationRailDestination(icon: Icon(Icons.cloud_outlined), selectedIcon: Icon(Icons.cloud), label: Text('Backup na Nuvem')),
                 ],
               ),
               const VerticalDivider(width: 1),
@@ -108,7 +123,7 @@ class AppShell extends ConsumerWidget {
             child: _ProfileAvatar(),
           ),
         ]),
-        drawer: _AppDrawer(onNavigateIndex: (index) => _goToIndex(context, index)),
+        drawer: _AppDrawer(selectedIndex: selectedIndex, onNavigateIndex: (index) => _goToIndex(context, index)),
         body: child,
       );
     }),
@@ -149,70 +164,91 @@ class AppShell extends ConsumerWidget {
 }
 
 class _AppDrawer extends StatelessWidget {
+  final int selectedIndex;
   final ValueChanged<int> onNavigateIndex;
-  const _AppDrawer({required this.onNavigateIndex});
+  const _AppDrawer({required this.selectedIndex, required this.onNavigateIndex});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Drawer(
       child: SafeArea(
         child: ListView(
           children: [
-            const DrawerHeader(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  children: [
-                    Icon(Icons.directions_run, size: 24),
-                    SizedBox(width: 8),
-                    Text('GerCorridas', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-                  ],
-                ),
+            Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(colors: [cs.primaryContainer, cs.secondaryContainer]),
               ),
+              child: Row(children: const [
+                Icon(Icons.directions_run, size: 28),
+                SizedBox(width: 10),
+                Text('GerCorridas', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+              ]),
             ),
             ListTile(
-              leading: const Text('📋', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.dashboard_outlined),
               title: const Text('Dashboard'),
+              selected: selectedIndex == 0,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(0);
               },
             ),
             ListTile(
-              leading: const Text('🏃', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.directions_run),
               title: const Text('Corridas'),
+              selected: selectedIndex == 1,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(1);
               },
             ),
             ListTile(
-              leading: const Text('📊', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.insights_outlined),
               title: const Text('Estatísticas'),
+              selected: selectedIndex == 2,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(2);
               },
             ),
             ListTile(
-              leading: const Text('📈', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.assignment_outlined),
               title: const Text('Relatórios'),
+              selected: selectedIndex == 3,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(3);
               },
             ),
             ListTile(
-              leading: const Text('🔄', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.sync_alt),
               title: const Text('Backup'),
+              selected: selectedIndex == 4,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(4);
               },
             ),
             ListTile(
-              leading: const Text('☁️', style: TextStyle(fontSize: 20)),
+              leading: const Icon(Icons.cloud_outlined),
               title: const Text('Backup na Nuvem'),
+              selected: selectedIndex == 5,
+              selectedTileColor: cs.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 Scaffold.maybeOf(context)?.closeDrawer();
                 onNavigateIndex(5);
