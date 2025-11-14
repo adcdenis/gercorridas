@@ -4,7 +4,7 @@ const bool useGoogleDriveCloudSync = true;
 
 // Nome da subpasta para armazenar backups no Google Drive (My Drive).
 // Se preferir deixar oculto fora da raiz, considere usar o espaço appData abaixo.
-const String cloudDriveFolderName = 'GerCorridas Backups';
+const String cloudDriveFolderName = 'GerCoridas';
 
 // Usar espaço "appDataFolder" do Google Drive para backups ocultos do app.
 // Requer escopo 'https://www.googleapis.com/auth/drive.appdata'.

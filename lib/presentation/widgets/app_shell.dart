@@ -56,7 +56,7 @@ class AppShell extends ConsumerWidget {
         final isWide = constraints.maxWidth >= 900;
         final title = Row(
           children: const [
-            Icon(Icons.event_note),
+            Icon(Icons.directions_run),
             SizedBox(width: 8),
             Text('GerCorridas'),
           ],
@@ -163,7 +163,7 @@ class _AppDrawer extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Row(
                   children: [
-                    Icon(Icons.event_note, size: 24),
+                    Icon(Icons.directions_run, size: 24),
                     SizedBox(width: 8),
                     Text('GerCorridas', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
                   ],

@@ -20,6 +20,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
   static const _prefsKeyFilterSearch = 'counter_list_filter_search';
   static const _prefsKeyFilterCategory = 'counter_list_filter_category';
   static const _prefsKeyFilterCategories = 'counter_list_filter_categories';
+  static const _prefsKeyFilterYear = 'counter_list_filter_year';
   String _labelForStatus(String s) {
     switch (s) {
       case 'pretendo_ir':
@@ -38,7 +39,6 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
         return s;
     }
   }
-  String _pluralize(int value, String singular, String plural) => value == 1 ? singular : plural;
   
   void _shareCounter(BuildContext context, Counter counter, DateTime effectiveDate, bool isFuture) {
     final now = DateTime.now();
@@ -83,6 +83,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
   String _search = '';
   Set<String> _selectedCategories = {};
   bool _showSearch = false;
+  int _selectedYear = DateTime.now().year;
 
   @override
   void initState() {
@@ -96,6 +97,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
       final savedSearch = prefs.getString(_prefsKeyFilterSearch) ?? '';
       final savedCategories = prefs.getStringList(_prefsKeyFilterCategories);
       final legacySingle = prefs.getString(_prefsKeyFilterCategory);
+      final savedYear = prefs.getInt(_prefsKeyFilterYear);
       if (mounted) {
         setState(() {
           _search = savedSearch;
@@ -103,6 +105,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
           if ((legacySingle?.isNotEmpty ?? false)) set.add(legacySingle!);
           _selectedCategories = set;
           _showSearch = savedSearch.isNotEmpty;
+          _selectedYear = savedYear ?? DateTime.now().year;
         });
         _searchCtrl.text = savedSearch;
       }
@@ -131,6 +134,34 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
             Row(
               children: [
                 const Text('Corridas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 12),
+                countersAsync.when(
+                  data: (items) {
+                    final years = {for (final c in items) c.eventDate.year}
+                      ..add(DateTime.now().year)
+                      ..add(_selectedYear);
+                    final sortedYears = years.toList()..sort();
+                    return SizedBox(
+                      width: 120,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _selectedYear,
+                          items: [for (final y in sortedYears) DropdownMenuItem(value: y, child: Text('$y'))],
+                          onChanged: (v) async {
+                            final nv = v ?? DateTime.now().year;
+                            setState(() => _selectedYear = nv);
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setInt(_prefsKeyFilterYear, nv);
+                            } catch (_) {}
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
+                ),
                 const SizedBox(width: 8),
                 Tooltip(
                   message: _showSearch ? 'Ocultar filtro' : 'Mostrar filtro',
@@ -299,15 +330,17 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
               loading: () => const Expanded(child: Center(child: CircularProgressIndicator())),
               error: (e, _) => Expanded(child: Text('Erro ao carregar: $e')),
               data: (items) {
-                var filtered = items.where((c) {
-                  final q = _search.toLowerCase();
-                  final matchesSearch = _search.isEmpty ||
-                      c.name.toLowerCase().contains(q) ||
-                      (c.description?.toLowerCase().contains(q) ?? false);
-                  final cat = (c.category ?? '').trim();
-                  final matchesCat = _selectedCategories.isEmpty || (cat.isNotEmpty && _selectedCategories.contains(cat));
-                  return matchesSearch && matchesCat;
-                }).toList();
+                var filtered = items
+                    .where((c) => c.eventDate.year == _selectedYear)
+                    .where((c) {
+                      final q = _search.toLowerCase();
+                      final matchesSearch = _search.isEmpty ||
+                          c.name.toLowerCase().contains(q) ||
+                          (c.description?.toLowerCase().contains(q) ?? false);
+                      final cat = (c.category ?? '').trim();
+                      final matchesCat = _selectedCategories.isEmpty || (cat.isNotEmpty && _selectedCategories.contains(cat));
+                      return matchesSearch && matchesCat;
+                    }).toList();
 
                 // Ordena alfabeticamente por nome (case-insensitive)
                 filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -508,7 +541,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
                                         ),
                                       ),
-                                      if (c.registrationUrl != null)
+                                      if ((c.registrationUrl?.isNotEmpty ?? false) && (c.status == 'pretendo_ir' || c.status == 'na_duvida'))
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: TextButton(
@@ -559,44 +592,5 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
-  }
-}
-
-class _CounterBox extends StatelessWidget {
-  final int value;
-  final String label;
-  final Color tint;
-  const _CounterBox({required this.value, required this.label, required this.tint});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [tint.withValues(alpha: 0.85), tint.withValues(alpha: 0.5)],
-        ),
-        boxShadow: [
-          BoxShadow(color: tint.withValues(alpha: 0.28), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('$value', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: scheme.onSurface)),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -282,35 +282,40 @@ class DashboardPage extends ConsumerWidget {
                 ]),
               ]),
             ),
+            IconButton(
+              tooltip: 'Compartilhar',
+              onPressed: () {
+                final text = '$name\n${df.format(date)} ${tf.format(date)}\n${category ?? ''}\n${distanceKm.toStringAsFixed(0)} km';
+                Share.share(text, subject: 'Corrida: $name');
+              },
+              icon: const Icon(Icons.share),
+            ),
           ]),
           const SizedBox(height: 10),
           Row(children: [
-            const Spacer(),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200),
+            Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Faltam:', style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Wrap(spacing: 6, runSpacing: 6, children: [
-                    _countBox('${comps.days}', 'dias', cs),
-                    _countBox('${comps.hours}', 'hrs', cs),
-                    _countBox('${comps.minutes}', 'min', cs),
-                    _countBox('${comps.seconds}', 'seg', cs),
+                  Row(children: [
+                    if (comps.years > 0) _countBox('${comps.years}', comps.years == 1 ? 'ano' : 'anos', cs),
+                    const SizedBox(width: 6),
+                    if (comps.months > 0) _countBox('${comps.months}', comps.months == 1 ? 'mês' : 'meses', cs),
+                    const SizedBox(width: 6),
+                    if (comps.days > 0) _countBox('${comps.days}', comps.days == 1 ? 'dia' : 'dias', cs),
+                    const SizedBox(width: 6),
+                    if (comps.hours > 0) _countBox('${comps.hours}', comps.hours == 1 ? 'hora' : 'horas', cs),
+                    const SizedBox(width: 6),
+                    if (comps.minutes > 0) _countBox('${comps.minutes}', comps.minutes == 1 ? 'minuto' : 'minutos', cs),
+                    const SizedBox(width: 6),
+                    if (comps.seconds > 0 || (comps.years + comps.months + comps.days + comps.hours + comps.minutes) == 0)
+                      _countBox('${comps.seconds}', comps.seconds == 1 ? 'segundo' : 'segundos', cs),
                   ]),
                 ]),
               ),
-            ),
-            const SizedBox(width: 12),
-            IconButton(
-              tooltip: 'Compartilhar',
-              onPressed: () {
-                final text = '${name}\n${df.format(date)} ${tf.format(date)}\n${category ?? ''}\n${distanceKm.toStringAsFixed(0)} km';
-                Share.share(text, subject: 'Corrida: $name');
-              },
-              icon: const Icon(Icons.share),
             ),
           ]),
         ],
@@ -384,113 +389,9 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _categoryBar(BuildContext context, {required String label, required int value, required int max, required Color color}) {
-    final cs = Theme.of(context).colorScheme;
-    final pct = max == 0 ? 0.0 : value / max;
-    final barColor = color;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(Icons.circle, size: 10, color: barColor),
-                const SizedBox(width: 6),
-                Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 6),
-                Text('$value'),
-              ]),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 8,
-                  child: Stack(children: [
-                    Container(color: cs.surfaceContainerHighest),
-                    FractionallySizedBox(widthFactor: pct, child: Container(color: barColor)),
-                  ]),
-                ),
-              ),
-            ]),
-          ),
-        ],
-      ),
-    );
-  }
+  
 
   // Gera uma paleta distinta de cores para a quantidade solicitada,
   // distribuindo as cores pelo círculo de matiz (HSL) para evitar colisões.
-  List<Color> _distinctPalette(BuildContext context, int count) {
-    final brightness = Theme.of(context).brightness;
-    final double s = brightness == Brightness.dark ? 0.65 : 0.60;
-    final double l = brightness == Brightness.dark ? 0.55 : 0.50;
-    if (count <= 0) return const [];
-    return List<Color>.generate(count, (i) {
-      final hue = (360.0 * i / count) % 360.0;
-      return HSLColor.fromAHSL(1.0, hue, s, l).toColor();
-    });
-  }
-}
-
-class _DonutChart extends StatelessWidget {
-  final Map<String, int> data;
-  final int total;
-  final Map<String, Color> colorsByCategory;
-  const _DonutChart({required this.data, required this.total, required this.colorsByCategory});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DonutPainter(data: data, total: total, colorsByCategory: colorsByCategory),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Total'),
-            Text('$total', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DonutPainter extends CustomPainter {
-  final Map<String, int> data;
-  final int total;
-  final Map<String, Color> colorsByCategory;
-  _DonutPainter({required this.data, required this.total, required this.colorsByCategory});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.shortestSide / 2 - 8;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 26
-      ..color = Colors.grey.withValues(alpha: 0.15);
-    canvas.drawArc(rect, 0, 2 * 3.1415926, false, bg);
-
-    if (total <= 0 || data.isEmpty) return;
-
-    double start = -3.1415926 / 2; // topo
-    for (final e in data.entries) {
-      final sweep = (e.value / total) * 2 * 3.1415926;
-      final p = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 26
-        ..strokeCap = StrokeCap.butt
-        // Usa mapeamento de cor único por categoria
-        ..color = colorsByCategory[e.key] ?? Colors.grey;
-      canvas.drawArc(rect, start, sweep, false, p);
-      start += sweep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DonutPainter oldDelegate) {
-    return oldDelegate.data != data || oldDelegate.total != total;
-  }
+  
 }

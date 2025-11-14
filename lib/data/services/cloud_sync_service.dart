@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:gercorridas/data/database/app_database.dart';
+import 'package:gercorridas/data/services/backup_codec.dart';
 import 'package:gercorridas/core/cloud/cloud_config.dart';
 import 'package:gercorridas/data/services/cloud_sync_drive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,31 +123,8 @@ class NoopCloudSyncService implements CloudSyncService {
 
   @override
   Future<void> backupNow() async {
-    // Gera JSON em memória para demonstrar que o backup seria enviado à nuvem
-    final counters = await db.getAllCounters();
-    final categories = await db.getAllCategories();
-    final json = jsonEncode({
-      'version': 1,
-      'counters': counters
-          .map((c) => {
-                'id': c.id,
-                'name': c.name,
-                'description': c.description,
-                'eventDate': c.eventDate.toIso8601String(),
-                'category': c.category,
-                'createdAt': c.createdAt.toIso8601String(),
-                'updatedAt': c.updatedAt?.toIso8601String(),
-              })
-          .toList(),
-      'categories': categories
-          .map((cat) => {
-                'id': cat.id,
-                'name': cat.name,
-                'normalized': cat.normalized,
-              })
-          .toList(),
-      // Histórico removido
-    });
+    // Usa o mesmo codec dos backups locais para garantir compatibilidade
+    final json = await BackupCodec.encodeToJsonString(db);
     // Aqui enviaríamos para a nuvem (Firestore/Storage). No Noop, apenas valida.
     if (json.isEmpty) {
       throw 'Falha ao preparar backup';

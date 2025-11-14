@@ -65,8 +65,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
 
   String _formatDiff(DateTime target) {
-    final diff = durationDiff(_now, target);
+    final diff = calendarDiff(_now, target);
     final parts = <String>[];
+    if (diff.years > 0) parts.add('${diff.years} ano${diff.years == 1 ? '' : 's'}');
+    if (diff.months > 0) parts.add('${diff.months} ${diff.months == 1 ? 'mês' : 'meses'}');
     if (diff.days > 0) parts.add('${diff.days} dia${diff.days == 1 ? '' : 's'}');
     if (diff.hours > 0) parts.add('${diff.hours} hora${diff.hours == 1 ? '' : 's'}');
     if (diff.minutes > 0) parts.add('${diff.minutes} minuto${diff.minutes == 1 ? '' : 's'}');
@@ -164,7 +166,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                     runSpacing: 12,
                     children: [
                       SizedBox(
-                        width: 170,
+                        width: 150,
                         child: TextField(
                           readOnly: true,
                           decoration: InputDecoration(
@@ -180,7 +182,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         ),
                       ),
                       SizedBox(
-                        width: 170,
+                        width: 150,
                         child: TextField(
                           readOnly: true,
                           decoration: InputDecoration(
@@ -196,7 +198,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         ),
                       ),
                       SizedBox(
-                        width: 170,
+                        width: 150,
                         child: DropdownButtonFormField<String>(
                           value: _type,
                           items: const [
@@ -209,13 +211,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         ),
                       ),
                       categoriesAsync.when(
-                        loading: () => const SizedBox(width: 180, child: LinearProgressIndicator()),
-                        error: (e, st) => SizedBox(width: 180, child: Text('Erro categorias')), 
+                        loading: () => const SizedBox(width: 150, child: LinearProgressIndicator()),
+                        error: (e, st) => SizedBox(width: 150, child: Text('Erro categorias')), 
                         data: (cats) {
                           final items = ['Todas', ...cats.map((c) => c.name)];
                           if (!items.contains(_category)) _category = 'Todas';
                           return SizedBox(
-                            width: 200,
+                            width: 150,
                             child: DropdownButtonFormField<String>(
                               value: _category,
                               items: items
@@ -228,7 +230,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         },
                       ),
                       SizedBox(
-                        width: 220,
+                        width: 150,
                         child: TextField(
                           controller: _descCtrl,
                           decoration: const InputDecoration(

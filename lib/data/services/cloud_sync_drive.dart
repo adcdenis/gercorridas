@@ -159,7 +159,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
       final api = drive.DriveApi(client);
 
       String spaces = useDriveAppDataSpace ? 'appDataFolder' : 'drive';
-      String q = "mimeType = 'application/json' and name contains 'lembre_backup_' and trashed = false";
+      String q = "mimeType = 'application/json' and name contains 'gercorridas_backup_' and trashed = false";
       if (!useDriveAppDataSpace) {
         final folderId = await _ensureBackupFolderId(api);
         q = "$q and '$folderId' in parents";
@@ -178,7 +178,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
 
       String? latestTs;
       drive.File? latestFile;
-      final regexp = RegExp(r"^lembre_backup_(\d{8}_\d{6})\.json");
+      final regexp = RegExp(r"^gercorridas_backup_(\d{8}_\d{6})\.json");
       for (final f in files) {
         final name = f.name ?? '';
         final m = regexp.firstMatch(name);
@@ -379,7 +379,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
         '${now.hour.toString().padLeft(2, '0')}'
         '${now.minute.toString().padLeft(2, '0')}'
         '${now.second.toString().padLeft(2, '0')}';
-    return 'lembre_backup_$ts.json';
+    return 'gercorridas_backup_$ts.json';
   }
 
   @override
@@ -398,7 +398,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
       try {
         final prefs = await SharedPreferences.getInstance();
         final name = created.name ?? fileMeta.name ?? '';
-        final m = RegExp(r"^lembre_backup_(\d{8}_\d{6})\.json").firstMatch(name);
+        final m = RegExp(r"^gercorridas_backup_(\d{8}_\d{6})\.json").firstMatch(name);
         final ts = m?.group(1);
         if (ts != null) {
           await prefs.setString(_prefsKeyLastBackupTs, ts);
@@ -418,7 +418,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final name = created.name ?? fileMeta.name ?? '';
-      final m = RegExp(r"^lembre_backup_(\d{8}_\d{6})\.json").firstMatch(name);
+      final m = RegExp(r"^gercorridas_backup_(\d{8}_\d{6})\.json").firstMatch(name);
       final ts = m?.group(1);
       if (ts != null) {
         await prefs.setString(_prefsKeyLastBackupTs, ts);
@@ -442,7 +442,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
     // Busca o arquivo mais recente com padrão de nome do app
     final api = drive.DriveApi(client);
     String spaces = 'drive';
-    String q = "mimeType = 'application/json' and name contains 'lembre_backup_'";
+    String q = "mimeType = 'application/json' and name contains 'gercorridas_backup_'";
     if (useDriveAppDataSpace) {
       spaces = 'appDataFolder';
     } else {
@@ -490,7 +490,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
     await _cleanupOldBackups(api);
     // Emite evento com a data definida pelo nome do arquivo
     final name = f.name ?? '';
-    final m = RegExp(r"^lembre_backup_(\d{8}_\d{6})\.json").firstMatch(name);
+    final m = RegExp(r"^gercorridas_backup_(\d{8}_\d{6})\.json").firstMatch(name);
     if (m != null) {
       final ts = m.group(1)!;
       try {
@@ -545,7 +545,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
   Future<void> _cleanupOldBackups(drive.DriveApi api) async {
     try {
       String spaces = useDriveAppDataSpace ? 'appDataFolder' : 'drive';
-      String q = "mimeType = 'application/json' and name contains 'lembre_backup_' and trashed = false";
+      String q = "mimeType = 'application/json' and name contains 'gercorridas_backup_' and trashed = false";
       if (!useDriveAppDataSpace) {
         final folderId = await _ensureBackupFolderId(api);
         q = "$q and '$folderId' in parents";
@@ -559,7 +559,7 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
       );
       final files = res.files ?? [];
       if (files.length <= 10) return;
-      final regexp = RegExp(r"^lembre_backup_(\d{8}_\d{6})\.json");
+      final regexp = RegExp(r"^gercorridas_backup_(\d{8}_\d{6})\.json");
       final entries = <MapEntry<String, drive.File>>[];
       for (final f in files) {
         final name = f.name ?? '';
