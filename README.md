@@ -230,3 +230,10 @@ flutter run -d emulator-5554
 Rodar flutter pub get e testar no emulador ou dispositivo: flutter run -d emulator-5554 ou flutter run -d android .
 
 flutter build apk --release
+
+
+DEBUG
+B7:CA:CE:16:CD:90:30:E6:B0:74:90:E8:2D:82:1D:FF:49:92:73:31
+
+RELEASE
+5C:05:97:40:A4:75:EE:33:40:2F:DE:ED:A2:B9:50:85:6F:41:40:2C

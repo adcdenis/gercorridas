@@ -38,7 +38,6 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
   bool _suppressedChange = false; // houve mudança local durante supressão
 
   final GoogleSignIn _signIn = GoogleSignIn(
-    serverClientId: '888851963736-tm49m91ku2kvuliqe9fa2402i7ao8630.apps.googleusercontent.com',
     scopes: useDriveAppDataSpace
         ? const [
             'email',
