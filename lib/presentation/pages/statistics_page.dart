@@ -142,7 +142,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
               final filtered = _applyYearMonthFilter(counters);
               final concluded = filtered.where((c) => c.status == 'concluida').toList();
               Duration? bestForKm(int km) {
-                final list = concluded.where((c) => c.distanceKm.round() == km).toList();
+                final list = concluded.where((c) => c.distanceKm >= km && c.distanceKm < (km + 1)).toList();
                 Duration? best;
                 for (final c in list) {
                   final d = _parseDuration(c.finishTime);
@@ -152,7 +152,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                 return best;
               }
               String? bestRaceLabel(int km) {
-                final list = concluded.where((c) => c.distanceKm.round() == km && _parseDuration(c.finishTime) != null).toList();
+                final list = concluded.where((c) => c.distanceKm >= km && c.distanceKm < (km + 1) && _parseDuration(c.finishTime) != null).toList();
                 list.sort((a, b) => _parseDuration(a.finishTime)!.compareTo(_parseDuration(b.finishTime)!));
                 if (list.isEmpty) return null;
                 final first = list.first;

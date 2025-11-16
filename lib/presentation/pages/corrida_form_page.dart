@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gercorridas/data/models/counter.dart' as model;
@@ -48,7 +49,11 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
           _nameCtrl.text = c.name;
           _descCtrl.text = c.description ?? '';
           _categoryCtrl.text = c.category ?? '';
-          _distanceCtrl.text = c.distanceKm.toStringAsFixed(0);
+          final dist = c.distanceKm;
+          final distStr = (dist % 1 == 0)
+              ? dist.toStringAsFixed(0)
+              : NumberFormat.decimalPattern('pt_BR').format(dist);
+          _distanceCtrl.text = distStr;
           _priceCtrl.text = c.price == null ? '' : c.price!.toStringAsFixed(2);
           _urlCtrl.text = c.registrationUrl ?? '';
           _finishCtrl.text = c.finishTime ?? '';
@@ -96,6 +101,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                 labelText: 'Nome da Corrida',
                 border: OutlineInputBorder(),
               ),
+              maxLength: 200,
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
             ),
@@ -107,6 +113,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                 border: OutlineInputBorder(),
               ),
               maxLines: 2,
+              maxLength: 500,
             ),
             const SizedBox(height: 12),
             Column(
@@ -143,6 +150,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                         return TextFormField(
                           controller: textController,
                           focusNode: focusNode,
+                          maxLength: 100,
                           onChanged: (v) {
                             // Mantém _categoryCtrl como fonte de verdade para outros widgets
                             _categoryCtrl
@@ -409,13 +417,14 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       border: const OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Informe a distância';
-                      final d = double.tryParse(v.replaceAll(',', '.'));
-                      if (d == null || d <= 0) return 'Distância inválida';
-                      return null;
-                    },
-                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Informe a distância';
+                    final d = double.tryParse(v.replaceAll(',', '.'));
+                    if (d == null || d <= 0) return 'Distância inválida';
+                    if (d > 999) return 'Distância máxima é 999';
+                    return null;
+                  },
+                ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -426,13 +435,14 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return null;
-                      final p = double.tryParse(v.replaceAll(',', '.'));
-                      if (p == null || p < 0) return 'Preço inválido';
-                      return null;
-                    },
-                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final p = double.tryParse(v.replaceAll(',', '.'));
+                    if (p == null || p < 0) return 'Preço inválido';
+                    if (p > 99999999) return 'Preço máximo é 99.999.999';
+                    return null;
+                  },
+                ),
                 ),
               ],
             ),
@@ -447,6 +457,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.url,
+                    maxLength: 200,
                   ),
                 ),
                 const SizedBox(width: 12),

@@ -393,6 +393,10 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                             );
                             final effectiveDate = baseLocal;
                             final isFuture = effectiveDate.isAfter(now);
+                            final hasDecimals = c.distanceKm % 1 != 0;
+                            final distLabel = hasDecimals
+                                ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
+                                : c.distanceKm.toStringAsFixed(0);
 
                             return Card(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -530,7 +534,7 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                                               children: [
                                                 Text('Distância:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                                                 const SizedBox(height: 4),
-                                                Text('${c.distanceKm.toStringAsFixed(0)} km', style: const TextStyle(fontSize: 14)),
+                                                Text('$distLabel km', style: const TextStyle(fontSize: 14)),
                                               ],
                                             ),
                                             Column(
