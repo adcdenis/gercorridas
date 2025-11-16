@@ -107,14 +107,17 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       final eff = _effectiveDate(c.eventDate);
       final past = isPast(eff, now: _now);
       final diffLabel = _formatDiff(eff);
+      final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
+      final numfmt = NumberFormat.decimalPattern('pt_BR');
       return ReportRow(
         nome: c.name,
         descricao: c.description ?? '',
         dataHora: c.eventDate,
-        categoria: c.category ?? '-'
-        ,
-        repeticao: '-',
+        categoria: c.category ?? '-',
         tempoFormatado: past ? diffLabel : diffLabel,
+        preco: c.price != null ? currency.format(c.price) : '-',
+        distancia: '${numfmt.format(c.distanceKm)} km',
+        tempoConclusao: (c.finishTime ?? '').isNotEmpty ? c.finishTime! : '-',
       );
     }).toList();
   }

@@ -12,15 +12,19 @@ class ReportRow {
   final String descricao;
   final DateTime dataHora;
   final String categoria;
-  final String repeticao;
   final String tempoFormatado; // "7 dias, 7 horas, 52 minutos, 52 segundos" ou "–"
+  final String preco; // "R$ 0,00" ou "-"
+  final String distancia; // "10,0 km" ou "-"
+  final String tempoConclusao; // "HH:mm:ss" ou "-"
   const ReportRow({
     required this.nome,
     required this.descricao,
     required this.dataHora,
     required this.categoria,
-    required this.repeticao,
     required this.tempoFormatado,
+    required this.preco,
+    required this.distancia,
+    required this.tempoConclusao,
   });
 }
 
@@ -46,7 +50,9 @@ Future<File> generateXlsxReport(List<ReportRow> rows) async {
     'Hora (HH:MM)',
     'Tempo decorrido ou restante',
     'Categoria',
-    'Repetição',
+    'Preço',
+    'Distância',
+    'Tempo de conclusão',
   ]);
 
   final df = DateFormat('dd/MM/yyyy');
@@ -59,7 +65,9 @@ Future<File> generateXlsxReport(List<ReportRow> rows) async {
       tf.format(r.dataHora),
       r.tempoFormatado,
       r.categoria,
-      r.repeticao,
+      r.preco,
+      r.distancia,
+      r.tempoConclusao,
     ]);
   }
 
@@ -96,11 +104,13 @@ Future<File> generatePdfReport(List<ReportRow> rows) async {
               // Larguras ajustadas para evitar quebra dentro das palavras
               0: const pw.FixedColumnWidth(70),  // nome
               1: const pw.FixedColumnWidth(95),  // descrição
-              2: const pw.FixedColumnWidth(85),  // data
-              3: const pw.FixedColumnWidth(55),  // hora
-              4: const pw.FixedColumnWidth(120), // tempo
+              2: const pw.FixedColumnWidth(80),  // data
+              3: const pw.FixedColumnWidth(50),  // hora
+              4: const pw.FixedColumnWidth(110), // tempo
               5: const pw.FixedColumnWidth(65),  // categoria
-              6: const pw.FixedColumnWidth(65),  // repetição
+              6: const pw.FixedColumnWidth(60),  // preço
+              7: const pw.FixedColumnWidth(60),  // distância
+              8: const pw.FixedColumnWidth(70),  // tempo de conclusão
             },
             children: [
               pw.TableRow(children: [
@@ -110,17 +120,21 @@ Future<File> generatePdfReport(List<ReportRow> rows) async {
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Hora (HH:MM)', style: headerStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tempo decorrido ou restante', style: headerStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Categoria', style: headerStyle)),
-                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Repetição', style: headerStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Preço', style: headerStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Distância', style: headerStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tempo de conclusão', style: headerStyle)),
               ]),
               ...rows.map((r) => pw.TableRow(children: [
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.nome, style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.descricao, style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(df.format(r.dataHora), style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(tf.format(r.dataHora), style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.tempoFormatado, style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.categoria, style: cellStyle)),
-                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.repeticao, style: cellStyle)),
-                  ]))
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.nome, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.descricao, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(df.format(r.dataHora), style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(tf.format(r.dataHora), style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.tempoFormatado, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.categoria, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.preco, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.distancia, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.tempoConclusao, style: cellStyle)),
+              ]))
             ],
           ),
         ];
