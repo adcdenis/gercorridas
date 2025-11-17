@@ -67,7 +67,7 @@ class AppRouter {
           GoRoute(
             path: '/backup',
             name: 'backup',
-            pageBuilder: (context, state) => const MaterialPage(child: BackupTabsPage(initialIndex: 1)),
+            pageBuilder: (context, state) => const MaterialPage(child: BackupTabsPage(initialIndex: 0)),
           ),
           GoRoute(
             path: '/cloud-backup',
