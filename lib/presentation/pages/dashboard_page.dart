@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:gercorridas/data/models/counter.dart';
+import 'package:gercorridas/core/text_sanitizer.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -126,7 +128,7 @@ class DashboardPage extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           final c = upcomingInscritas[i].$1;
                           final eff = upcomingInscritas[i].$2;
-                          return _inscritaTile(context, c.name, c.category, c.distanceKm, eff, refNow);
+                          return _inscritaTile(context, c, eff, refNow);
                         },
                       );
                     },
@@ -255,7 +257,7 @@ class DashboardPage extends ConsumerWidget {
     );
   }
   
-  Widget _inscritaTile(BuildContext context, String name, String? category, double distanceKm, DateTime date, DateTime now) {
+  Widget _inscritaTile(BuildContext context, Counter c, DateTime date, DateTime now) {
     final cs = Theme.of(context).colorScheme;
     final df = DateFormat('dd/MM/yyyy');
     final tf = DateFormat('HH:mm');
@@ -273,20 +275,23 @@ class DashboardPage extends ConsumerWidget {
           Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 Wrap(spacing: 16, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
                   Row(children: [const Icon(Icons.calendar_month, size: 16), const SizedBox(width: 6), Text(df.format(date))]),
                   Row(children: [const Icon(Icons.access_time, size: 16), const SizedBox(width: 6), Text(tf.format(date))]),
-                  Row(children: [const Icon(Icons.route, size: 16), const SizedBox(width: 6), Text('${distanceKm.toStringAsFixed(0)} km')]),
+                  Row(children: [const Icon(Icons.route, size: 16), const SizedBox(width: 6), Text('${c.distanceKm.toStringAsFixed(0)} km')]),
                 ]),
               ]),
             ),
             IconButton(
               tooltip: 'Compartilhar',
               onPressed: () {
-                final text = '$name\n${df.format(date)} ${tf.format(date)}\n${category ?? ''}\n${distanceKm.toStringAsFixed(0)} km';
-                Share.share(text, subject: 'Corrida: $name');
+                final isFuture = date.isAfter(now);
+                final text = buildShareText(c, date, isFuture);
+                final sanitizedText = sanitizeForShare(text);
+                final sanitizedSubject = sanitizeForShare('Corrida: ${c.name}');
+                Share.share(sanitizedText, subject: sanitizedSubject);
               },
               icon: const Icon(Icons.share),
             ),

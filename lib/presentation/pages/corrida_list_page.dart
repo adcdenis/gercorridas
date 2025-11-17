@@ -60,35 +60,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
   }
   
   void _shareCounter(BuildContext context, Counter counter, DateTime effectiveDate, bool isFuture) {
-    final now = DateTime.now();
-    final comps = _calendarComponents(now, effectiveDate);
-    final timeText = isFuture ? 'Faltam' : 'Passaram';
-    
-    String formattedTime = '';
-    if (comps.years > 0) formattedTime += '${comps.years} ano${comps.years == 1 ? '' : 's'}, ';
-    if (comps.months > 0) formattedTime += '${comps.months} mês${comps.months == 1 ? '' : 'es'}, ';
-    if (comps.days > 0) formattedTime += '${comps.days} dia${comps.days == 1 ? '' : 's'}, ';
-    if (comps.hours > 0) formattedTime += '${comps.hours} hora${comps.hours == 1 ? '' : 's'}, ';
-    if (comps.minutes > 0) formattedTime += '${comps.minutes} minuto${comps.minutes == 1 ? '' : 's'}, ';
-    if (comps.seconds > 0) formattedTime += '${comps.seconds} segundo${comps.seconds == 1 ? '' : 's'}, ';
-    
-    // Remove a vírgula final se houver tempo formatado
-    if (formattedTime.endsWith(', ')) {
-      formattedTime = formattedTime.substring(0, formattedTime.length - 2);
-    }
-    
-  final shareText = '''
-📊 **${counter.name}**
-
-${counter.description ?? 'Sem descrição'}
-
-📅 **Data do evento:** ${DateFormat('dd/MM/yyyy HH:mm').format(counter.eventDate)}
-${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.category}\n' : ''}
-⏰ **Tempo ${timeText.toLowerCase()}:** ${formattedTime.isNotEmpty ? formattedTime : 'menos de 1 segundo'}
-
-📱 Compartilhado por GerCorridas
-''';
-
+    final shareText = buildShareText(counter, effectiveDate, isFuture);
     final sanitizedText = sanitizeForShare(shareText);
     final sanitizedSubject = sanitizeForShare('Corrida: ${counter.name}');
     Share.share(sanitizedText, subject: sanitizedSubject);
