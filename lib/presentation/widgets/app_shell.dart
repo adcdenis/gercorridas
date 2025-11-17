@@ -104,6 +104,7 @@ class AppShell extends ConsumerWidget {
                   NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
                   NavigationRailDestination(icon: Icon(Icons.directions_run), selectedIcon: Icon(Icons.directions_run), label: Text('Corridas')),
                   NavigationRailDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: Text('Estatísticas')),
+                  NavigationRailDestination(icon: Icon(Icons.account_tree_outlined), selectedIcon: Icon(Icons.account_tree), label: Text('Mapa Mental')),
                   NavigationRailDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: Text('Relatórios')),
                   NavigationRailDestination(icon: Icon(Icons.sync_alt), selectedIcon: Icon(Icons.sync), label: Text('Backup')),
                   NavigationRailDestination(icon: Icon(Icons.cloud_outlined), selectedIcon: Icon(Icons.cloud), label: Text('Backup na Nuvem')),
@@ -133,9 +134,10 @@ class AppShell extends ConsumerWidget {
   int _selectedIndexForLocation(String location) {
     if (location.startsWith('/corridas')) return 1;
     if (location.startsWith('/estatisticas')) return 2;
-    if (location.startsWith('/reports')) return 3;
-    if (location.startsWith('/backup')) return 4;
-    if (location.startsWith('/cloud-backup')) return 5;
+    if (location.startsWith('/mapa-mental')) return 3;
+    if (location.startsWith('/reports')) return 4;
+    if (location.startsWith('/backup')) return 5;
+    if (location.startsWith('/cloud-backup')) return 6;
     return 0; // dashboard default
   }
 
@@ -151,12 +153,15 @@ class AppShell extends ConsumerWidget {
         context.go('/estatisticas');
         break;
       case 3:
-        context.go('/reports');
+        context.go('/mapa-mental');
         break;
       case 4:
-        context.go('/backup');
+        context.go('/reports');
         break;
       case 5:
+        context.go('/backup');
+        break;
+      case 6:
         context.go('/cloud-backup');
         break;
     }
@@ -210,50 +215,61 @@ class _AppDrawer extends StatelessWidget {
                 onNavigateIndex(1);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.insights_outlined),
-              title: const Text('Estatísticas'),
-              selected: selectedIndex == 2,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(2);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.assignment_outlined),
-              title: const Text('Relatórios'),
-              selected: selectedIndex == 3,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(3);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.sync_alt),
-              title: const Text('Backup'),
-              selected: selectedIndex == 4,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(4);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cloud_outlined),
-              title: const Text('Backup na Nuvem'),
-              selected: selectedIndex == 5,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(5);
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.insights_outlined),
+            title: const Text('Estatísticas'),
+            selected: selectedIndex == 2,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(2);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_tree_outlined),
+            title: const Text('Mapa Mental'),
+            selected: selectedIndex == 3,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(3);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assignment_outlined),
+            title: const Text('Relatórios'),
+            selected: selectedIndex == 4,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(4);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.sync_alt),
+            title: const Text('Backup'),
+            selected: selectedIndex == 5,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(5);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cloud_outlined),
+            title: const Text('Backup na Nuvem'),
+            selected: selectedIndex == 6,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(6);
+            },
+          ),
             const Divider(height: 1),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
