@@ -12,15 +12,19 @@ class StatisticsPage extends ConsumerStatefulWidget {
 }
 
 class _StatisticsPageState extends ConsumerState<StatisticsPage> {
-  int _selectedYear = DateTime.now().year;
-  int? _selectedMonth;
+  late DateTime _startDate;
+  late DateTime _endDate;
 
-  List<model.Counter> _applyYearMonthFilter(List<model.Counter> list) {
-    var out = list.where((c) => c.eventDate.year == _selectedYear).toList();
-    if (_selectedMonth != null) {
-      out = out.where((c) => c.eventDate.month == _selectedMonth).toList();
-    }
-    return out;
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _startDate = DateTime(now.year, 1, 1);
+    _endDate = DateTime(now.year, 12, 31, 23, 59, 59);
+  }
+
+  List<model.Counter> _applyDateRangeFilter(List<model.Counter> list) {
+    return list.where((c) => c.eventDate.isAfter(_startDate.subtract(const Duration(milliseconds: 1))) && c.eventDate.isBefore(_endDate.add(const Duration(milliseconds: 1)))).toList();
   }
 
   Duration? _parseDuration(String? s) {
@@ -82,15 +86,8 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                 child: Text('Erro ao carregar filtros'),
               ),
             ),
-            data: (counters) {
-              final years = {
-                for (final c in counters) c.eventDate.year
-              }..add(DateTime.now().year);
-              final sortedYears = years.toList()..sort();
-              final monthNames = const [
-                'Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
-              ];
-
+            data: (_) {
+              final df = DateFormat('dd/MM/yyyy');
               return Card(
                 color: cs.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
@@ -105,25 +102,72 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(
-                        child: DropdownButtonFormField<int>(
-                          value: _selectedYear,
-                          items: [
-                            for (final y in sortedYears) DropdownMenuItem(value: y, child: Text('$y')),
-                          ],
-                          onChanged: (v) => setState(() => _selectedYear = v ?? _selectedYear),
-                          decoration: const InputDecoration(labelText: 'Ano'),
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _startDate,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              final newStart = DateTime(picked.year, picked.month, picked.day);
+                              var newEnd = _endDate;
+                              final maxEnd = DateTime(newStart.year + 10, newStart.month, newStart.day, 23, 59, 59);
+                              if (newEnd.isBefore(newStart)) {
+                                newEnd = DateTime(newStart.year, newStart.month, newStart.day, 23, 59, 59);
+                              }
+                              if (newEnd.isAfter(maxEnd)) {
+                                newEnd = maxEnd;
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Intervalo máximo de 10 anos')),
+                                  );
+                                }
+                              }
+                              setState(() {
+                                _startDate = newStart;
+                                _endDate = newEnd;
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.date_range),
+                          label: Text('Início: ${df.format(_startDate)}'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DropdownButtonFormField<int?>(
-                          value: _selectedMonth,
-                          items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('Todos')),
-                            for (int m = 1; m <= 12; m++) DropdownMenuItem<int?>(value: m, child: Text(monthNames[m-1])),
-                          ],
-                          onChanged: (v) => setState(() => _selectedMonth = v),
-                          decoration: const InputDecoration(labelText: 'Mês (opcional)'),
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _endDate,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              var selectedEnd = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+                              final maxEnd = DateTime(_startDate.year + 10, _startDate.month, _startDate.day, 23, 59, 59);
+                              if (selectedEnd.isBefore(_startDate)) {
+                                selectedEnd = DateTime(_startDate.year, _startDate.month, _startDate.day, 23, 59, 59);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Fim não pode ser antes do início')),
+                                  );
+                                }
+                              } else if (selectedEnd.isAfter(maxEnd)) {
+                                selectedEnd = maxEnd;
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Intervalo máximo de 10 anos')),
+                                  );
+                                }
+                              }
+                              setState(() => _endDate = selectedEnd);
+                            }
+                          },
+                          icon: const Icon(Icons.event),
+                          label: Text('Fim: ${df.format(_endDate)}'),
                         ),
                       ),
                     ]),
@@ -139,7 +183,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, st) => Center(child: Text('Erro ao carregar: $e')),
             data: (counters) {
-              final filtered = _applyYearMonthFilter(counters);
+              final filtered = _applyDateRangeFilter(counters);
               final concluded = filtered.where((c) => c.status == 'concluida').toList();
               Duration? bestForKm(int km) {
                 final list = concluded.where((c) => c.distanceKm >= km && c.distanceKm < (km + 1)).toList();
@@ -221,11 +265,10 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [
-                          const Icon(Icons.calendar_month, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Resumo do Período (Ano: $_selectedYear, Mês: ${_selectedMonth ?? 'Todos'})',
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Row(children: const [
+                          Icon(Icons.calendar_month, size: 18),
+                          SizedBox(width: 8),
+                          Text('Resumo do Período', style: TextStyle(fontWeight: FontWeight.w600)),
                         ]),
                         const SizedBox(height: 12),
                         LayoutBuilder(builder: (context, constraints) {
