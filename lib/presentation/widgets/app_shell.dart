@@ -107,7 +107,7 @@ class AppShell extends ConsumerWidget {
                   NavigationRailDestination(icon: Icon(Icons.account_tree_outlined), selectedIcon: Icon(Icons.account_tree), label: Text('Mapa Mental')),
                   NavigationRailDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: Text('Relatórios')),
                   NavigationRailDestination(icon: Icon(Icons.sync_alt), selectedIcon: Icon(Icons.sync), label: Text('Backup')),
-                  NavigationRailDestination(icon: Icon(Icons.cloud_outlined), selectedIcon: Icon(Icons.cloud), label: Text('Backup na Nuvem')),
+                  NavigationRailDestination(icon: Icon(Icons.payments), selectedIcon: Icon(Icons.payments), label: Text('Finanças')),
                 ],
               ),
               const VerticalDivider(width: 1),
@@ -137,8 +137,9 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/mapa-mental')) return 3;
     if (location.startsWith('/reports')) return 4;
     if (location.startsWith('/backup')) return 5;
-    if (location.startsWith('/cloud-backup')) return 6;
-    return 0; // dashboard default
+    if (location.startsWith('/cloud-backup')) return 5;
+    if (location.startsWith('/financas')) return 6;
+    return 0;
   }
 
   void _goToIndex(BuildContext context, int index) {
@@ -162,7 +163,7 @@ class AppShell extends ConsumerWidget {
         context.go('/backup');
         break;
       case 6:
-        context.go('/cloud-backup');
+        context.go('/financas');
         break;
     }
   }
@@ -249,6 +250,17 @@ class _AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.payments),
+            title: const Text('Finanças'),
+            selected: selectedIndex == 6,
+            selectedTileColor: cs.secondaryContainer,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(6);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.sync_alt),
             title: const Text('Backup'),
             selected: selectedIndex == 5,
@@ -257,17 +269,6 @@ class _AppDrawer extends StatelessWidget {
             onTap: () {
               Scaffold.maybeOf(context)?.closeDrawer();
               onNavigateIndex(5);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.cloud_outlined),
-            title: const Text('Backup na Nuvem'),
-            selected: selectedIndex == 6,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(6);
             },
           ),
             const Divider(height: 1),

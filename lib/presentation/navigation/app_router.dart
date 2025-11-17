@@ -7,8 +7,8 @@ import '../pages/corrida_list_page.dart';
 import '../pages/reports_page.dart';
 import '../pages/statistics_page.dart';
 import '../pages/mapa_mental_page.dart';
-import '../pages/backup_page.dart';
-import '../pages/cloud_backup_page.dart';
+import '../pages/backup_tabs_page.dart';
+import '../pages/financas_page.dart';
 import '../widgets/app_shell.dart';
 
 class AppRouter {
@@ -67,12 +67,17 @@ class AppRouter {
           GoRoute(
             path: '/backup',
             name: 'backup',
-            pageBuilder: (context, state) => const MaterialPage(child: BackupPage()),
+            pageBuilder: (context, state) => const MaterialPage(child: BackupTabsPage(initialIndex: 1)),
           ),
           GoRoute(
             path: '/cloud-backup',
             name: 'cloud_backup',
-            pageBuilder: (context, state) => const MaterialPage(child: CloudBackupPage()),
+            pageBuilder: (context, state) => const MaterialPage(child: BackupTabsPage(initialIndex: 0)),
+          ),
+          GoRoute(
+            path: '/financas',
+            name: 'financas',
+            pageBuilder: (context, state) => const MaterialPage(child: FinancasPage()),
           ),
         ],
       ),
