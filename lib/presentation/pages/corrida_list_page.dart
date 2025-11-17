@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
  import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/data/models/counter.dart';
@@ -76,7 +77,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
       formattedTime = formattedTime.substring(0, formattedTime.length - 2);
     }
     
-    final shareText = '''
+  final shareText = '''
 📊 **${counter.name}**
 
 ${counter.description ?? 'Sem descrição'}
@@ -91,6 +92,27 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
     final sanitizedText = sanitizeForShare(shareText);
     final sanitizedSubject = sanitizeForShare('Corrida: ${counter.name}');
     Share.share(sanitizedText, subject: sanitizedSubject);
+  } 
+
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url.startsWith('http') ? url : 'https://$url');
+    if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('URL inválida')));
+      }
+      return;
+    }
+    final openedExternal = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!openedExternal) {
+      final openedInApp = await launchUrl(
+        uri,
+        mode: LaunchMode.inAppWebView,
+        webViewConfiguration: const WebViewConfiguration(enableJavaScript: true),
+      );
+      if (!openedInApp && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível abrir o link')));
+      }
+    }
   }
   
   TimeDiffComponents _calendarComponents(DateTime a, DateTime b) {
@@ -554,29 +576,47 @@ ${counter.category?.isNotEmpty == true ? '🏷️ **Categoria:** ${counter.categ
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                        decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(_iconForStatus(c.status), size: 14, color: scheme.onPrimaryContainer),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              _labelForStatus(c.status),
-                                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(_iconForStatus(c.status), size: 14, color: scheme.onPrimaryContainer),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  _labelForStatus(c.status),
+                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if ((c.registrationUrl?.isNotEmpty ?? false)) ...[
+                                            const SizedBox(width: 8),
+                                            InkWell(
+                                              borderRadius: BorderRadius.circular(12),
+                                              onTap: () => _openUrl(context, c.registrationUrl!),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.link, size: 14, color: scheme.onPrimaryContainer),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      'Link',
+                                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
                                           ],
-                                        ),
+                                        ],
                                       ),
-                                      if ((c.registrationUrl?.isNotEmpty ?? false) && (c.status == 'pretendo_ir' || c.status == 'na_duvida'))
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: TextButton(
-                                            onPressed: () => Share.share(c.registrationUrl!),
-                                            child: const Text('Inscrever-se'),
-                                          ),
-                                        ),
                                     ],
                                   ),
                                 ),

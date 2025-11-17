@@ -59,7 +59,7 @@ class AppShell extends ConsumerWidget {
           children: const [
             Icon(Icons.directions_run),
             SizedBox(width: 8),
-            Text('GerCorridas'),
+            Text('PlanRace'),
           ],
         );
 
@@ -92,7 +92,7 @@ class AppShell extends ConsumerWidget {
                     children: const [
                       Icon(Icons.directions_run),
                       SizedBox(width: 8),
-                      Text('GerCorridas', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('PlanRace', style: TextStyle(fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -190,7 +190,7 @@ class _AppDrawer extends StatelessWidget {
               child: Row(children: const [
                 Icon(Icons.directions_run, size: 28),
                 SizedBox(width: 10),
-                Text('GerCorridas', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text('PlanRace', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
               ]),
             ),
             ListTile(

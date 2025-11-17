@@ -21,6 +21,44 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   final _descCtrl = TextEditingController();
   DateTime _now = DateTime.now();
 
+  String _labelForStatus(String s) {
+    switch (s) {
+      case 'pretendo_ir':
+        return 'Pretendo ir';
+      case 'inscrito':
+        return 'Inscrito';
+      case 'concluida':
+        return 'Concluída';
+      case 'cancelada':
+        return 'Cancelada';
+      case 'nao_pude_ir':
+        return 'Não pude ir';
+      case 'na_duvida':
+        return 'Na dúvida';
+      default:
+        return s;
+    }
+  }
+
+  IconData _iconForStatus(String s) {
+    switch (s) {
+      case 'pretendo_ir':
+        return Icons.event;
+      case 'inscrito':
+        return Icons.assignment_turned_in;
+      case 'concluida':
+        return Icons.emoji_events_outlined;
+      case 'cancelada':
+        return Icons.cancel;
+      case 'nao_pude_ir':
+        return Icons.not_interested;
+      case 'na_duvida':
+        return Icons.help_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
   @override
   void dispose() {
     _descCtrl.dispose();
@@ -138,7 +176,6 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final cs = Theme.of(context).colorScheme;
     final df = DateFormat('dd/MM/yyyy');
-    final tf = DateFormat('HH:mm');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -302,6 +339,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               final filtered = _applyFilters(counters, cats);
 
               return Card(
+                elevation: 0,
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
@@ -318,49 +356,118 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         itemBuilder: (ctx, i) {
                           final c = filtered[i];
                           final eff = _effectiveDate(c.eventDate);
-                          final past = isPast(eff, now: _now);
-                          final diffStr = _formatDiff(eff);
-                          final label = past ? 'Passaram $diffStr' : 'Faltam $diffStr';
-                              final timeColor = past ? Colors.red : Colors.blue;
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: cs.surfaceContainerHighest.withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                          final isFuture = eff.isAfter(_now);
+                          final hasDecimals = c.distanceKm % 1 != 0;
+                          final distLabel = hasDecimals
+                              ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
+                              : c.distanceKm.toStringAsFixed(0);
+
+                          return Card(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: cs.outlineVariant),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: isFuture
+                                      ? [cs.primaryContainer.withValues(alpha: 0.6), cs.primaryContainer.withValues(alpha: 0.3)]
+                                      : [cs.errorContainer.withValues(alpha: 0.6), cs.errorContainer.withValues(alpha: 0.3)],
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    c.name,
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Text(
-                                        '${df.format(c.eventDate)} • ${tf.format(c.eventDate)}',
-                                        style: TextStyle(color: cs.onSurfaceVariant),
-                                      ),
-                                      if ((c.category ?? '').isNotEmpty)
-                                        Text(
-                                          c.category!,
-                                          style: TextStyle(color: cs.onSurfaceVariant),
-                                        ),
-                                      
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        label,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          color: timeColor,
+                                      Expanded(
+                                        child: Text(
+                                          c.name,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.2,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  trailing: null,
-                                ),
-                              );
+                                  const SizedBox(height: 8),
+                                  Table(
+                                    columnWidths: const {
+                                      0: FlexColumnWidth(),
+                                      1: FlexColumnWidth(),
+                                    },
+                                    defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                                    children: [
+                                      TableRow(children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Data:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                            const SizedBox(height: 4),
+                                            Text(DateFormat('dd/MM/yyyy').format(eff), style: const TextStyle(fontSize: 14)),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Horário:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                            const SizedBox(height: 4),
+                                            Text(DateFormat('HH:mm').format(eff), style: const TextStyle(fontSize: 14)),
+                                          ],
+                                        ),
+                                      ]),
+                                      TableRow(children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Distância:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                            const SizedBox(height: 4),
+                                            Text('$distLabel km', style: const TextStyle(fontSize: 14)),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Preço:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              c.price != null
+                                                  ? NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(c.price)
+                                                  : '—',
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ]),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(_iconForStatus(c.status), size: 14, color: cs.onPrimaryContainer),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _labelForStatus(c.status),
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onPrimaryContainer),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ],
