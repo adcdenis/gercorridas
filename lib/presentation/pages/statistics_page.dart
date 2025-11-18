@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/data/models/counter.dart' as model;
+import 'package:gercorridas/domain/time_utils.dart';
 
 class StatisticsPage extends ConsumerStatefulWidget {
   const StatisticsPage({super.key});
@@ -204,6 +205,14 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                 final ts = _formatDuration(t);
                 return ts.isEmpty ? first.name : '${first.name} • $ts';
               }
+              String? bestRacePace(int km) {
+                final list = concluded.where((c) => c.distanceKm >= km && c.distanceKm < (km + 1) && _parseDuration(c.finishTime) != null).toList();
+                list.sort((a, b) => _parseDuration(a.finishTime)!.compareTo(_parseDuration(b.finishTime)!));
+                if (list.isEmpty) return null;
+                final first = list.first;
+                final t = _parseDuration(first.finishTime);
+                return computePace(t, first.distanceKm);
+              }
 
               final totalCorridasConcluidas = filtered.where((c) => c.status == 'concluida').length;
               final distanciaTotal = concluded.fold<double>(0.0, (sum, c) => sum + c.distanceKm);
@@ -238,10 +247,38 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                         mainAxisExtent: extent,
                       ),
                       children: [
-                        _metricCard(context, emoji: '🕒', title: 'RP nos 5km', value: _formatDuration(bestForKm(5)), subtitle: bestRaceLabel(5)),
-                        _metricCard(context, emoji: '🕒', title: 'RP nos 10km', value: _formatDuration(bestForKm(10)), subtitle: bestRaceLabel(10)),
-                        _metricCard(context, emoji: '🕒', title: 'RP nos 21km', value: _formatDuration(bestForKm(21)), subtitle: bestRaceLabel(21)),
-                        _metricCard(context, emoji: '🕒', title: 'RP nos 42km', value: _formatDuration(bestForKm(42)), subtitle: bestRaceLabel(42)),
+                        _metricCard(
+                          context,
+                          emoji: '🕒',
+                          title: 'RP nos 5km',
+                          value: _formatDuration(bestForKm(5)),
+                          subtitle: bestRaceLabel(5),
+                          footer: (() { final p = bestRacePace(5); return p != null ? 'Pace: $p' : null; })(),
+                        ),
+                        _metricCard(
+                          context,
+                          emoji: '🕒',
+                          title: 'RP nos 10km',
+                          value: _formatDuration(bestForKm(10)),
+                          subtitle: bestRaceLabel(10),
+                          footer: (() { final p = bestRacePace(10); return p != null ? 'Pace: $p' : null; })(),
+                        ),
+                        _metricCard(
+                          context,
+                          emoji: '🕒',
+                          title: 'RP nos 21km',
+                          value: _formatDuration(bestForKm(21)),
+                          subtitle: bestRaceLabel(21),
+                          footer: (() { final p = bestRacePace(21); return p != null ? 'Pace: $p' : null; })(),
+                        ),
+                        _metricCard(
+                          context,
+                          emoji: '🕒',
+                          title: 'RP nos 42km',
+                          value: _formatDuration(bestForKm(42)),
+                          subtitle: bestRaceLabel(42),
+                          footer: (() { final p = bestRacePace(42); return p != null ? 'Pace: $p' : null; })(),
+                        ),
                         _metricCard(context, emoji: '🏆', title: 'Total de Corridas', value: '$totalCorridasConcluidas'),
                         _metricCard(context, emoji: '📍', title: 'Distância Total', value: '${distanciaTotal.toStringAsFixed(1)} km'),
                         _metricCard(context, emoji: '🎯', title: 'Inscrições', value: '$inscricoes'),
@@ -303,7 +340,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     );
   }
 
-  Widget _metricCard(BuildContext context, {required String emoji, required String title, required String value, String? subtitle}) {
+  Widget _metricCard(BuildContext context, {required String emoji, required String title, required String value, String? subtitle, String? footer}) {
     final cs = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
@@ -329,6 +366,10 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                   const SizedBox(height: 6),
                   Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                 ],
+                if (footer != null) ...[
+                  const SizedBox(height: 6),
+                  Text(footer, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                ],
               ]),
             ),
           ],
@@ -336,6 +377,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
       ),
     );
   }
+
 
   Widget _summaryCard(BuildContext context, {required String emoji, required String title, required String value}) {
     final cs = Theme.of(context).colorScheme;

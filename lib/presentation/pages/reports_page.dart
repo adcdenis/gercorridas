@@ -5,6 +5,7 @@ import 'package:gercorridas/data/models/counter.dart' as model;
 import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/domain/report_export.dart';
+import 'package:gercorridas/data/models/category.dart' as cat;
 
 class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
@@ -181,7 +182,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   Future<void> _recalcAndShareXlsx() async {
     setState(() => _now = DateTime.now());
     final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
-    final cats = ref.read(categoriesProvider).asData?.value?.map((c) => c.name).toList() ?? const <String>[];
+    final catsData = ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
+    final cats = catsData.map((c) => c.name).toList();
     final filtered = _applyFilters(counters, cats);
     final rows = _toReportRows(filtered);
     if (rows.isEmpty) return;
@@ -191,7 +193,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   Future<void> _recalcAndSharePdf() async {
     setState(() => _now = DateTime.now());
     final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
-    final cats = ref.read(categoriesProvider).asData?.value?.map((c) => c.name).toList() ?? const <String>[];
+    final catsData = ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
+    final cats = catsData.map((c) => c.name).toList();
     final filtered = _applyFilters(counters, cats);
     final rows = _toReportRows(filtered);
     if (rows.isEmpty) return;

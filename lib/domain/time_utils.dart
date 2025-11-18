@@ -108,6 +108,16 @@ bool isPast(DateTime eventDate, {DateTime? now}) {
   return eventDate.isBefore(reference);
 }
 
+String? computePace(Duration? total, double distanceKm) {
+  if (total == null) return null;
+  if (distanceKm <= 0) return null;
+  final secondsPerKm = total.inSeconds / distanceKm;
+  final m = (secondsPerKm ~/ 60).toInt();
+  final s = (secondsPerKm - m * 60).round();
+  final ss = s.clamp(0, 59).toString().padLeft(2, '0');
+  return '$m:$ss min/km';
+}
+
 DateTime nextRecurringDate(DateTime base, Recurrence recurrence, DateTime now) {
   // Normaliza para timezone local para consistência
   base = base.toLocal();

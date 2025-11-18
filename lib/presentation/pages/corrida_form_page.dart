@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,7 +41,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
       final t = _categoryCtrl.text.trim();
       if (t.isNotEmpty) {
         _categoryFieldCtrl?.text = t;
-        _categoryFieldCtrl?.selection = TextSelection.collapsed(offset: t.length);
+        _categoryFieldCtrl?.selection = TextSelection.collapsed(
+          offset: t.length,
+        );
         setState(() {});
       }
     });
@@ -49,7 +52,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
   Future<void> _loadForEditIfNeeded() async {
     final id = widget.counterId;
     if (id != null) {
-    final repo = ref.read(corridaRepositoryProvider);
+      final repo = ref.read(corridaRepositoryProvider);
       final c = await repo.byId(id);
       if (c != null) {
         final base = c.eventDate;
@@ -59,7 +62,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
           _categoryCtrl.text = c.category ?? '';
           final catText = c.category ?? '';
           _categoryFieldCtrl?.text = catText;
-          _categoryFieldCtrl?.selection = TextSelection.collapsed(offset: catText.length);
+          _categoryFieldCtrl?.selection = TextSelection.collapsed(
+            offset: catText.length,
+          );
           final dist = c.distanceKm;
           final distStr = (dist % 1 == 0)
               ? dist.toStringAsFixed(0)
@@ -211,8 +216,8 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                                         _categoryFieldCtrl?.text = value;
                                         _categoryFieldCtrl?.selection =
                                             TextSelection.collapsed(
-                                          offset: value.length,
-                                        );
+                                              offset: value.length,
+                                            );
                                         setState(() {});
                                       },
                                     );
@@ -427,15 +432,18 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       labelText: 'Distância (km) *',
                       border: const OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Informe a distância';
-                    final d = double.tryParse(v.replaceAll(',', '.'));
-                    if (d == null || d <= 0) return 'Distância inválida';
-                    if (d > 999) return 'Distância máxima é 999';
-                    return null;
-                  },
-                ),
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Informe a distância';
+                      final d = double.tryParse(v.replaceAll(',', '.'));
+                      if (d == null || d <= 0) return 'Distância inválida';
+                      if (d > 999) return 'Distância máxima é 999';
+                      return null;
+                    },
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -445,15 +453,17 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       labelText: 'Preço (R\$)',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return null;
-                    final p = double.tryParse(v.replaceAll(',', '.'));
-                    if (p == null || p < 0) return 'Preço inválido';
-                    if (p > 99999999) return 'Preço máximo é 99.999.999';
-                    return null;
-                  },
-                ),
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final p = double.tryParse(v.replaceAll(',', '.'));
+                      if (p == null || p < 0) return 'Preço inválido';
+                      if (p > 99999999) return 'Preço máximo é 99.999.999';
+                      return null;
+                    },
+                  ),
                 ),
               ],
             ),
@@ -486,16 +496,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                         tooltip: 'Selecionar horário',
                         icon: const Icon(Icons.access_time),
                         onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: const TimeOfDay(hour: 0, minute: 0),
-                          );
-                          if (picked != null) {
-                            final h = picked.hour.toString().padLeft(2, '0');
-                            final m = picked.minute.toString().padLeft(2, '0');
-                            // sem segundos no picker; assume 00
-                            _finishCtrl.text = '$h:$m:00';
-                          }
+                          await _pickFinishTimeWithSeconds();
                         },
                       ),
                     ),
@@ -513,14 +514,33 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                 child: DropdownButton<String>(
                   value: _status,
                   items: const [
-                    DropdownMenuItem(value: 'pretendo_ir', child: Text('Pretendo ir')),
-                    DropdownMenuItem(value: 'inscrito', child: Text('Inscrito')),
-                    DropdownMenuItem(value: 'concluida', child: Text('Concluída')),
-                    DropdownMenuItem(value: 'cancelada', child: Text('Cancelada')),
-                    DropdownMenuItem(value: 'nao_pude_ir', child: Text('Não pude ir')),
-                    DropdownMenuItem(value: 'na_duvida', child: Text('Na dúvida')),
+                    DropdownMenuItem(
+                      value: 'pretendo_ir',
+                      child: Text('Pretendo ir'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'inscrito',
+                      child: Text('Inscrito'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'concluida',
+                      child: Text('Concluída'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'cancelada',
+                      child: Text('Cancelada'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'nao_pude_ir',
+                      child: Text('Não pude ir'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'na_duvida',
+                      child: Text('Na dúvida'),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => _status = v ?? 'pretendo_ir'),
+                  onChanged: (v) =>
+                      setState(() => _status = v ?? 'pretendo_ir'),
                 ),
               ),
             ),
@@ -599,7 +619,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
 
   Future<void> _onSubmit() async {
     if (!_formKey.currentState!.validate()) return;
-      final repo = ref.read(corridaRepositoryProvider);
+    final repo = ref.read(corridaRepositoryProvider);
     final categoryRepo = ref.read(categoryRepositoryProvider);
     final dt = DateTime(
       _date.year,
@@ -618,11 +638,14 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
       );
     }
 
-    final distance = double.tryParse(_distanceCtrl.text.replaceAll(',', '.')) ?? 0.0;
+    final distance =
+        double.tryParse(_distanceCtrl.text.replaceAll(',', '.')) ?? 0.0;
     final price = _priceCtrl.text.trim().isEmpty
         ? null
         : double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
-    final finish = _finishCtrl.text.trim().isEmpty ? null : _finishCtrl.text.trim();
+    final finish = _finishCtrl.text.trim().isEmpty
+        ? null
+        : _finishCtrl.text.trim();
 
     if (widget.counterId == null) {
       final now = DateTime.now();
@@ -638,7 +661,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
         status: _status,
         distanceKm: distance,
         price: price,
-        registrationUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
+        registrationUrl: _urlCtrl.text.trim().isEmpty
+            ? null
+            : _urlCtrl.text.trim(),
         finishTime: finish,
         createdAt: now,
         updatedAt: now,
@@ -664,7 +689,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
         status: _status,
         distanceKm: distance,
         price: price,
-        registrationUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
+        registrationUrl: _urlCtrl.text.trim().isEmpty
+            ? null
+            : _urlCtrl.text.trim(),
         finishTime: finish,
         createdAt: _createdAt ?? now,
         updatedAt: now,
@@ -677,6 +704,94 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
         ),
       );
       context.go('/corridas');
+    }
+  }
+
+  Future<void> _pickFinishTimeWithSeconds() async {
+    int h = 0, m = 0, s = 0;
+    final current = _finishCtrl.text.trim();
+    if (current.isNotEmpty) {
+      final parts = current.split(':');
+      if (parts.length == 3) {
+        h = int.tryParse(parts[0]) ?? 0;
+        m = int.tryParse(parts[1]) ?? 0;
+        s = int.tryParse(parts[2]) ?? 0;
+      } else if (parts.length == 2) {
+        h = int.tryParse(parts[0]) ?? 0;
+        m = int.tryParse(parts[1]) ?? 0;
+      }
+    }
+
+    final hc = TextEditingController(text: h.toString().padLeft(2, '0'));
+    final mc = TextEditingController(text: m.toString().padLeft(2, '0'));
+    final sc = TextEditingController(text: s.toString().padLeft(2, '0'));
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tempo de conclusão'),
+        content: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: hc,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Horas',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: mc,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Minutos',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: sc,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Segundos',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      int hh = int.tryParse(hc.text) ?? 0;
+      int mm = int.tryParse(mc.text) ?? 0;
+      int ss = int.tryParse(sc.text) ?? 0;
+      hh = hh.clamp(0, 99);
+      mm = mm.clamp(0, 59);
+      ss = ss.clamp(0, 59);
+      _finishCtrl.text =
+          '${hh.toString().padLeft(2, '0')}:${mm.toString().padLeft(2, '0')}:${ss.toString().padLeft(2, '0')}';
+      setState(() {});
     }
   }
 }

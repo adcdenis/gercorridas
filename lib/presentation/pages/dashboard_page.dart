@@ -58,7 +58,7 @@ class DashboardPage extends ConsumerWidget {
                 ]),
                 const SizedBox(height: 8),
                 const Text('Visão geral do sistema de corridas'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 Row(children: [
                   const Text('Ano:'),
@@ -82,14 +82,14 @@ class DashboardPage extends ConsumerWidget {
                 LayoutBuilder(builder: (context, constraints) {
                   final isNarrow = constraints.maxWidth < 900;
                   final cross = 2;
-                  final extent = isNarrow ? 120.0 : 120.0;
+                  final extent = isNarrow ? 80.0 : 78.0;
                   return GridView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: cross,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 6,
                       mainAxisExtent: extent,
                     ),
                     children: [
@@ -103,7 +103,7 @@ class DashboardPage extends ConsumerWidget {
                   );
                 }),
 
-                const SizedBox(height: 16),
+                const SizedBox.shrink(),
 
                 _panelCard(
                   context,
@@ -196,9 +196,9 @@ class DashboardPage extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
       child: SizedBox(
         width: width,
-        height: 90,
+        height: 64,
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -212,10 +212,9 @@ class DashboardPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 2),
                     Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: onColor)),
-                    const SizedBox(height: 4),
-                    Text('$value', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: onColor)),
+                    const SizedBox(height: 2),
+                    Text('$value', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: onColor)),
                   ],
                 ),
               ),
@@ -233,7 +232,7 @@ class DashboardPage extends ConsumerWidget {
       color: cs.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -249,7 +248,7 @@ class DashboardPage extends ConsumerWidget {
                 ),
               ),
             ]),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             child,
           ],
         ),
@@ -346,6 +345,22 @@ class DashboardPage extends ConsumerWidget {
     final priceStr = (price == null || price == 0)
         ? 'Gratuita'
         : NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(price);
+    String? pace() {
+      if (finishTime == null || finishTime.trim().isEmpty) return null;
+      final parts = finishTime.split(':');
+      Duration? total;
+      if (parts.length == 3) {
+        final h = int.tryParse(parts[0]) ?? 0;
+        final m = int.tryParse(parts[1]) ?? 0;
+        final s = int.tryParse(parts[2]) ?? 0;
+        total = Duration(hours: h, minutes: m, seconds: s);
+      } else if (parts.length == 2) {
+        final m = int.tryParse(parts[0]) ?? 0;
+        final s = int.tryParse(parts[1]) ?? 0;
+        total = Duration(minutes: m, seconds: s);
+      }
+      return computePace(total, distanceKm);
+    }
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -386,6 +401,9 @@ class DashboardPage extends ConsumerWidget {
                 Row(children: [const Icon(Icons.access_time, size: 16), const SizedBox(width: 6), Text(tf.format(date))]),
                 const SizedBox(height: 8),
                 Row(children: [const Icon(Icons.timelapse, size: 16), const SizedBox(width: 6), Text(finishTime?.isNotEmpty == true ? finishTime! : '-')]),
+                const SizedBox(height: 8),
+                if (pace() != null)
+                  Row(children: [const Icon(Icons.speed, size: 16), const SizedBox(width: 6), Text('Pace: ${pace()}', style: const TextStyle(fontSize: 12))]),
               ]),
             ),
           ]),
