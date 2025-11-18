@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/data/models/counter.dart' as model;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:gercorridas/domain/time_utils.dart';
 
 class MapaMentalPage extends ConsumerStatefulWidget {
   const MapaMentalPage({super.key});
@@ -321,8 +322,31 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
                   _infoTile(tileWidth, Icons.access_time, Text(tf.format(c.eventDate), softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
                   _infoTile(tileWidth, Icons.place, Text('$distLabel km', softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
                   _infoTile(tileWidth, Icons.attach_money, Text(c.price != null ? currency.format(c.price) : '—', softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
-                  if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                  if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty) ...[
                     _infoTile(tileWidth, Icons.timer, Text(c.finishTime!, softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
+                    Builder(builder: (_) {
+                      final parts = c.finishTime!.split(':');
+                      Duration? total;
+                      if (parts.length == 3) {
+                        final h = int.tryParse(parts[0]) ?? 0;
+                        final m = int.tryParse(parts[1]) ?? 0;
+                        final s = int.tryParse(parts[2]) ?? 0;
+                        total = Duration(hours: h, minutes: m, seconds: s);
+                      } else if (parts.length == 2) {
+                        final m = int.tryParse(parts[0]) ?? 0;
+                        final s = int.tryParse(parts[1]) ?? 0;
+                        total = Duration(minutes: m, seconds: s);
+                      }
+                      final pace = computePace(total, c.distanceKm);
+                      return pace != null
+                          ? _infoTile(
+                              tileWidth,
+                              Icons.speed,
+                              Text(pace, softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                            )
+                          : const SizedBox.shrink();
+                    }),
+                  ],
                   if ((c.registrationUrl ?? '').isNotEmpty)
                     SizedBox(
                       width: tileWidth,
