@@ -51,32 +51,35 @@ class DashboardPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: const [
-                  Text('📊', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 8),
-                  Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                Row(children: [
+                  const Text('📊', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  const Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  SizedBox(
+                    width: 84,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        isDense: true,
+                        value: selectedYear,
+                        items: [
+                          for (final y in sortedYears)
+                            DropdownMenuItem(value: y, child: Text('$y'))
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            ref.read(_selectedYearProvider.notifier).state = v;
+                          }
+                        },
+                      ),
+                    ),
+                  ),
                 ]),
                 const SizedBox(height: 8),
                 const Text('Visão geral do sistema de corridas'),
                 const SizedBox(height: 8),
 
-                Row(children: [
-                  const Text('Ano:'),
-                  const SizedBox(width: 8),
-                  DropdownButton<int>(
-                    value: selectedYear,
-                    items: [
-                      for (final y in sortedYears)
-                        DropdownMenuItem(value: y, child: Text('$y'))
-                    ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        ref.read(_selectedYearProvider.notifier).state = v;
-                      }
-                    },
-                  ),
-                ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Cards principais (grid: garante 2 colunas no mobile)
                 LayoutBuilder(builder: (context, constraints) {

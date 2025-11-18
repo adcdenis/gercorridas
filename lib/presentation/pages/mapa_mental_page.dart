@@ -62,23 +62,16 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
               data: (items) {
                 final years = {for (final c in items) c.eventDate.year}..add(DateTime.now().year)..add(_selectedYear);
                 final sortedYears = years.toList()..sort();
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Ano:'),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 96,
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          isDense: true,
-                          value: _selectedYear,
-                          items: [for (final y in sortedYears) DropdownMenuItem(value: y, child: Text('$y'))],
-                          onChanged: (v) => setState(() => _selectedYear = v ?? _selectedYear),
-                        ),
-                      ),
+                return SizedBox(
+                  width: 84,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      isDense: true,
+                      value: _selectedYear,
+                      items: [for (final y in sortedYears) DropdownMenuItem(value: y, child: Text('$y'))],
+                      onChanged: (v) => setState(() => _selectedYear = v ?? _selectedYear),
                     ),
-                  ],
+                  ),
                 );
               },
               loading: () => const SizedBox.shrink(),
@@ -86,18 +79,13 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
             );
 
             if (isNarrow) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              return Row(
                 children: [
-                  Row(
-                    children: const [
-                      Text('🔗', style: TextStyle(fontSize: 18)),
-                      SizedBox(width: 8),
-                      Expanded(child: Text('Mapa Mental das Corridas', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600))),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Align(alignment: Alignment.centerRight, child: yearSelector),
+                  const Text('🔗', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('Mapa Mental', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600))),
+                  const SizedBox(width: 8),
+                  yearSelector,
                 ],
               );
             }
@@ -106,7 +94,7 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
               children: [
                 const Text('🔗', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
-                const Expanded(child: Text('Mapa Mental das Corridas', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600))),
+                const Expanded(child: Text('Mapa Mental', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600))),
                 const SizedBox(width: 12),
                 yearSelector,
               ],

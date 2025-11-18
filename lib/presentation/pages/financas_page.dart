@@ -63,27 +63,29 @@ class _FinancasPageState extends ConsumerState<FinancasPage> {
             const Icon(Icons.payments),
             const SizedBox(width: 8),
             const Text('Finanças', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 12),
+            const Spacer(),
             SizedBox(
-              width: 140,
-              child: DropdownButtonFormField<int>(
-                value: countersAsync.maybeWhen(
-                  data: (list) {
-                    final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
-                    final selected = years.contains(_year) ? _year : (years.isNotEmpty ? years.first : _year);
-                    return selected;
-                  },
-                  orElse: () => _year,
+              width: 84,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  isDense: true,
+                  value: countersAsync.maybeWhen(
+                    data: (list) {
+                      final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
+                      final selected = years.contains(_year) ? _year : (years.isNotEmpty ? years.first : _year);
+                      return selected;
+                    },
+                    orElse: () => _year,
+                  ),
+                  items: countersAsync.maybeWhen(
+                    data: (list) {
+                      final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
+                      return years.map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList();
+                    },
+                    orElse: () => [DropdownMenuItem(value: _year, child: Text(_year.toString()))],
+                  ),
+                  onChanged: (y) => setState(() => _year = y ?? _year),
                 ),
-                items: countersAsync.maybeWhen(
-                  data: (list) {
-                    final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
-                    return years.map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList();
-                  },
-                  orElse: () => [DropdownMenuItem(value: _year, child: Text(_year.toString()))],
-                ),
-                onChanged: (y) => setState(() => _year = y ?? _year),
-                decoration: const InputDecoration(labelText: 'Ano'),
               ),
             ),
           ]),

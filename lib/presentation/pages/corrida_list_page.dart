@@ -142,7 +142,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
             Row(
               children: [
                 const Text('Corridas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
-                const SizedBox(width: 12),
+                const Spacer(),
                 countersAsync.when(
                   data: (items) {
                     final years = {for (final c in items) c.eventDate.year}
@@ -150,9 +150,10 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                       ..add(_selectedYear);
                     final sortedYears = years.toList()..sort();
                     return SizedBox(
-                      width: 120,
+                      width: 84,
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int>(
+                          isDense: true,
                           value: _selectedYear,
                           items: [for (final y in sortedYears) DropdownMenuItem(value: y, child: Text('$y'))],
                           onChanged: (v) async {
