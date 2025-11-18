@@ -178,6 +178,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     await shareFile(file, mimeType: 'application/pdf');
   }
 
+  Future<void> _recalcAndShareXlsx() async {
+    setState(() => _now = DateTime.now());
+    final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
+    final cats = ref.read(categoriesProvider).asData?.value?.map((c) => c.name).toList() ?? const <String>[];
+    final filtered = _applyFilters(counters, cats);
+    final rows = _toReportRows(filtered);
+    if (rows.isEmpty) return;
+    await _generateAndShareXlsx(rows);
+  }
+
+  Future<void> _recalcAndSharePdf() async {
+    setState(() => _now = DateTime.now());
+    final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
+    final cats = ref.read(categoriesProvider).asData?.value?.map((c) => c.name).toList() ?? const <String>[];
+    final filtered = _applyFilters(counters, cats);
+    final rows = _toReportRows(filtered);
+    if (rows.isEmpty) return;
+    await _generateAndSharePdf(rows);
+  }
+
   @override
   Widget build(BuildContext context) {
     final countersAsync = ref.watch(corridasProvider);
@@ -302,26 +322,20 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                     runSpacing: 8,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () => setState(() => _now = DateTime.now()),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Recalcular tempo'),
-                      ),
                       countersAsync.when(
                         loading: () => const SizedBox(),
                         error: (e, st) => const SizedBox(),
                         data: (counters) {
                           final cats = categoriesAsync.maybeWhen(data: (v) => v.map((c) => c.name).toList(), orElse: () => <String>[]);
                           final filtered = _applyFilters(counters, cats);
-                          final rows = _toReportRows(filtered);
                           return Wrap(spacing: 8, children: [
                             FilledButton.icon(
-                              onPressed: rows.isEmpty ? null : () => _generateAndShareXlsx(rows),
+                              onPressed: filtered.isEmpty ? null : _recalcAndShareXlsx,
                               icon: const Icon(Icons.grid_on),
                               label: const Text('Gerar Excel'),
                             ),
                             FilledButton.icon(
-                              onPressed: rows.isEmpty ? null : () => _generateAndSharePdf(rows),
+                              onPressed: filtered.isEmpty ? null : _recalcAndSharePdf,
                               icon: const Icon(Icons.picture_as_pdf),
                               label: const Text('Gerar PDF'),
                             ),
