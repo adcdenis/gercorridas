@@ -156,6 +156,23 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       final diffLabel = _formatDiff(eff);
       final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
       final numfmt = NumberFormat.decimalPattern('pt_BR');
+      String pace = '-';
+      if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty) {
+        final parts = c.finishTime!.split(':');
+        Duration? total;
+        if (parts.length == 3) {
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = int.tryParse(parts[1]) ?? 0;
+          final s = int.tryParse(parts[2]) ?? 0;
+          total = Duration(hours: h, minutes: m, seconds: s);
+        } else if (parts.length == 2) {
+          final m = int.tryParse(parts[0]) ?? 0;
+          final s = int.tryParse(parts[1]) ?? 0;
+          total = Duration(minutes: m, seconds: s);
+        }
+        final ps = computePace(total, c.distanceKm);
+        if (ps != null) pace = ps;
+      }
       return ReportRow(
         nome: c.name,
         descricao: c.description ?? '',
@@ -165,6 +182,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         preco: c.price != null ? currency.format(c.price) : '-',
         distancia: '${numfmt.format(c.distanceKm)} km',
         tempoConclusao: (c.finishTime ?? '').isNotEmpty ? c.finishTime! : '-',
+        pace: pace,
       );
     }).toList();
   }
@@ -424,10 +442,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   Table(
-                                    columnWidths: const {
-                                      0: FlexColumnWidth(),
-                                      1: FlexColumnWidth(),
-                                    },
+                                    columnWidths: (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                                        ? const {0: FlexColumnWidth(), 1: FlexColumnWidth(), 2: FlexColumnWidth()}
+                                        : const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
                                     defaultVerticalAlignment: TableCellVerticalAlignment.top,
                                     children: [
                                       TableRow(children: [
@@ -447,6 +464,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                             Text(DateFormat('HH:mm').format(eff), style: const TextStyle(fontSize: 14)),
                                           ],
                                         ),
+                                        if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Tempo:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                              const SizedBox(height: 4),
+                                              Text(c.finishTime!, style: const TextStyle(fontSize: 14)),
+                                            ],
+                                          ),
                                       ]),
                                       TableRow(children: [
                                         Column(
@@ -470,6 +496,30 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                             ),
                                           ],
                                         ),
+                                        if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Pace:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                              const SizedBox(height: 4),
+                                              Builder(builder: (_) {
+                                                final parts = c.finishTime!.split(':');
+                                                Duration? total;
+                                                if (parts.length == 3) {
+                                                  final h = int.tryParse(parts[0]) ?? 0;
+                                                  final m = int.tryParse(parts[1]) ?? 0;
+                                                  final s = int.tryParse(parts[2]) ?? 0;
+                                                  total = Duration(hours: h, minutes: m, seconds: s);
+                                                } else if (parts.length == 2) {
+                                                  final m = int.tryParse(parts[0]) ?? 0;
+                                                  final s = int.tryParse(parts[1]) ?? 0;
+                                                  total = Duration(minutes: m, seconds: s);
+                                                }
+                                                final ps = computePace(total, c.distanceKm);
+                                                return Text(ps ?? '—', style: const TextStyle(fontSize: 12));
+                                              }),
+                                            ],
+                                          ),
                                       ]),
                                     ],
                                   ),

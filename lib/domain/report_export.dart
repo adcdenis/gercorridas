@@ -16,6 +16,7 @@ class ReportRow {
   final String preco; // "R$ 0,00" ou "-"
   final String distancia; // "10,0 km" ou "-"
   final String tempoConclusao; // "HH:mm:ss" ou "-"
+  final String pace; // "mm:ss min/km" ou "-"
   const ReportRow({
     required this.nome,
     required this.descricao,
@@ -25,6 +26,7 @@ class ReportRow {
     required this.preco,
     required this.distancia,
     required this.tempoConclusao,
+    required this.pace,
   });
 }
 
@@ -53,6 +55,7 @@ Future<File> generateXlsxReport(List<ReportRow> rows) async {
     'Preço',
     'Distância',
     'Tempo de conclusão',
+    'Pace',
   ]);
 
   final df = DateFormat('dd/MM/yyyy');
@@ -68,6 +71,7 @@ Future<File> generateXlsxReport(List<ReportRow> rows) async {
       r.preco,
       r.distancia,
       r.tempoConclusao,
+      r.pace,
     ]);
   }
 
@@ -111,6 +115,7 @@ Future<File> generatePdfReport(List<ReportRow> rows) async {
               6: const pw.FixedColumnWidth(60),  // preço
               7: const pw.FixedColumnWidth(60),  // distância
               8: const pw.FixedColumnWidth(70),  // tempo de conclusão
+              9: const pw.FixedColumnWidth(60),  // pace
             },
             children: [
               pw.TableRow(children: [
@@ -123,6 +128,7 @@ Future<File> generatePdfReport(List<ReportRow> rows) async {
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Preço', style: headerStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Distância', style: headerStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tempo de conclusão', style: headerStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Pace', style: headerStyle)),
               ]),
               ...rows.map((r) => pw.TableRow(children: [
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.nome, style: cellStyle)),
@@ -134,6 +140,7 @@ Future<File> generatePdfReport(List<ReportRow> rows) async {
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.preco, style: cellStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.distancia, style: cellStyle)),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.tempoConclusao, style: cellStyle)),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(r.pace, style: cellStyle)),
               ]))
             ],
           ),
