@@ -436,8 +436,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                       decimal: true,
                     ),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty)
+                      if (v == null || v.trim().isEmpty) {
                         return 'Informe a distância';
+                      }
                       final d = double.tryParse(v.replaceAll(',', '.'));
                       if (d == null || d <= 0) return 'Distância inválida';
                       if (d > 999) return 'Distância máxima é 999';
