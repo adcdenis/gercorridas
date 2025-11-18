@@ -431,7 +431,7 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                   child: TextFormField(
                     controller: _priceCtrl,
                     decoration: InputDecoration(
-                      labelText: 'Preço (R\$ - opcional)',
+                      labelText: 'Preço (R\$)',
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
@@ -453,8 +453,10 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                   child: TextFormField(
                     controller: _urlCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'URL de Inscrição (opcional)',
+                      labelText: 'URL de Inscrição',
                       border: OutlineInputBorder(),
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                      counterText: '',
                     ),
                     keyboardType: TextInputType.url,
                     maxLength: 200,
@@ -466,8 +468,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
                     controller: _finishCtrl,
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText: 'Tempo de Conclusão (opcional)',
+                      labelText: 'Tempo de Conclusão',
                       border: const OutlineInputBorder(),
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
                       suffixIcon: IconButton(
                         tooltip: 'Selecionar horário',
                         icon: const Icon(Icons.access_time),
