@@ -40,6 +40,14 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _startDate = DateTime(now.year, 1, 1);
+    _endDate = DateTime(now.year, 12, 31, 23, 59, 59);
+  }
+
   IconData _iconForStatus(String s) {
     switch (s) {
       case 'pretendo_ir':

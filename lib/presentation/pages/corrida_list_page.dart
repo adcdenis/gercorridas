@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gercorridas/state/providers.dart';
-import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/data/models/counter.dart';
 import 'package:gercorridas/core/text_sanitizer.dart';
 
@@ -87,10 +86,6 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
     }
   }
   
-  TimeDiffComponents _calendarComponents(DateTime a, DateTime b) {
-    // Usa diferença de calendário normalizada em horário local
-    return calendarDiff(a, b);
-  }
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
   Set<String> _selectedCategories = {};
