@@ -55,6 +55,7 @@ class AppShell extends ConsumerWidget {
       child: LayoutBuilder(builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
         final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
+        final cs = Theme.of(context).colorScheme;
         final title = Row(
           children: const [
             Icon(Icons.directions_run),
@@ -87,27 +88,46 @@ class AppShell extends ConsumerWidget {
                 indicatorColor: Theme.of(context).colorScheme.primaryContainer,
                 leading: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.directions_run),
-                      SizedBox(width: 8),
-                      Text('PlanRace', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(context).colorScheme.primaryContainer,
+                          Theme.of(context).colorScheme.secondaryContainer,
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Row(children: [
+                          Icon(Icons.directions_run),
+                          SizedBox(width: 8),
+                          Text('PlanRace', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ]),
+                        SizedBox(height: 4),
+                        Text('Organize suas corridas', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
                   ),
                 ),
                 trailing: const Padding(
                   padding: EdgeInsets.all(12),
                   child: _VersionFooter(),
                 ),
-                destinations: const [
-                  NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
-                  NavigationRailDestination(icon: Icon(Icons.directions_run), selectedIcon: Icon(Icons.directions_run), label: Text('Corridas')),
-                  NavigationRailDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: Text('Estatísticas')),
-                  NavigationRailDestination(icon: Icon(Icons.account_tree_outlined), selectedIcon: Icon(Icons.account_tree), label: Text('Mapa Mental')),
-                  NavigationRailDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: Text('Relatórios')),
-                  NavigationRailDestination(icon: Icon(Icons.sync_alt), selectedIcon: Icon(Icons.sync), label: Text('Backup')),
-                  NavigationRailDestination(icon: Icon(Icons.payments), selectedIcon: Icon(Icons.payments), label: Text('Finanças')),
+                destinations: [
+                  NavigationRailDestination(icon: Icon(Icons.dashboard_outlined, color: cs.primary), selectedIcon: Icon(Icons.dashboard, color: cs.primary), label: const Text('Dashboard')),
+                  NavigationRailDestination(icon: Icon(Icons.directions_run, color: cs.secondary), selectedIcon: Icon(Icons.directions_run, color: cs.secondary), label: const Text('Corridas')),
+                  NavigationRailDestination(icon: Icon(Icons.insights_outlined, color: cs.error), selectedIcon: Icon(Icons.insights, color: cs.error), label: const Text('Estatísticas')),
+                  NavigationRailDestination(icon: Icon(Icons.account_tree_outlined, color: cs.tertiary), selectedIcon: Icon(Icons.account_tree, color: cs.tertiary), label: const Text('Mapa Mental')),
+                  NavigationRailDestination(icon: Icon(Icons.assignment_outlined, color: cs.primary), selectedIcon: Icon(Icons.assignment, color: cs.primary), label: const Text('Relatórios')),
+                  NavigationRailDestination(icon: Icon(Icons.sync_alt, color: cs.secondary), selectedIcon: Icon(Icons.sync, color: cs.secondary), label: const Text('Backup')),
+                  NavigationRailDestination(icon: Icon(Icons.payments, color: cs.primary), selectedIcon: Icon(Icons.payments, color: cs.primary), label: const Text('Finanças')),
                 ],
               ),
               const VerticalDivider(width: 1),
@@ -177,107 +197,70 @@ class _AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    Widget item(IconData icon, String label, bool selected, VoidCallback onTap, Color iconColor) {
+      final bg = selected ? cs.primaryContainer : cs.surfaceContainerHigh;
+      final fg = selected ? cs.onPrimaryContainer : cs.onSurface;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            Scaffold.maybeOf(context)?.closeDrawer();
+            onTap();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+            child: Row(children: [
+              Icon(icon, color: iconColor),
+              const SizedBox(width: 10),
+              Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+            ]),
+          ),
+        ),
+      );
+    }
+
     return Drawer(
       child: SafeArea(
-        child: ListView(
-          children: [
-            Container(
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(colors: [cs.primaryContainer, cs.secondaryContainer]),
+        child: Column(children: [
+          Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [cs.primaryContainer, cs.secondaryContainer],
               ),
-              child: Row(children: const [
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+              Row(children: [
                 Icon(Icons.directions_run, size: 28),
                 SizedBox(width: 10),
                 Text('PlanRace', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
               ]),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Dashboard'),
-              selected: selectedIndex == 0,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(0);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.directions_run),
-              title: const Text('Corridas'),
-              selected: selectedIndex == 1,
-              selectedTileColor: cs.secondaryContainer,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () {
-                Scaffold.maybeOf(context)?.closeDrawer();
-                onNavigateIndex(1);
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.insights_outlined),
-            title: const Text('Estatísticas'),
-            selected: selectedIndex == 2,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(2);
-            },
+              SizedBox(height: 4),
+              Text('Organize suas corridas', style: TextStyle(fontSize: 12)),
+            ]),
           ),
-          ListTile(
-            leading: const Icon(Icons.account_tree_outlined),
-            title: const Text('Mapa Mental'),
-            selected: selectedIndex == 3,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(3);
-            },
+          Expanded(
+            child: ListView(children: [
+              item(Icons.dashboard_outlined, 'Dashboard', selectedIndex == 0, () => onNavigateIndex(0), cs.primary),
+              item(Icons.directions_run, 'Corridas', selectedIndex == 1, () => onNavigateIndex(1), cs.secondary),
+              item(Icons.insights_outlined, 'Estatísticas', selectedIndex == 2, () => onNavigateIndex(2), cs.error),
+              item(Icons.account_tree_outlined, 'Mapa Mental', selectedIndex == 3, () => onNavigateIndex(3), cs.tertiary),
+              item(Icons.assignment_outlined, 'Relatórios', selectedIndex == 4, () => onNavigateIndex(4), cs.primary),
+              item(Icons.payments, 'Finanças', selectedIndex == 6, () => onNavigateIndex(6), cs.primary),
+              item(Icons.sync_alt, 'Backup', selectedIndex == 5, () => onNavigateIndex(5), cs.secondary),
+            ]),
           ),
-          ListTile(
-            leading: const Icon(Icons.assignment_outlined),
-            title: const Text('Relatórios'),
-            selected: selectedIndex == 4,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(4);
-            },
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: _VersionFooter(),
           ),
-          ListTile(
-            leading: const Icon(Icons.payments),
-            title: const Text('Finanças'),
-            selected: selectedIndex == 6,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(6);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.sync_alt),
-            title: const Text('Backup'),
-            selected: selectedIndex == 5,
-            selectedTileColor: cs.secondaryContainer,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: () {
-              Scaffold.maybeOf(context)?.closeDrawer();
-              onNavigateIndex(5);
-            },
-          ),
-            const Divider(height: 1),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: _VersionFooter(),
-            ),
-          ],
-        ),
+        ]),
       ),
     );
   }
