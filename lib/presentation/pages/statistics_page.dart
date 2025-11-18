@@ -253,7 +253,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                           title: 'RP nos 5km',
                           value: _formatDuration(bestForKm(5)),
                           subtitle: bestRaceLabel(5),
-                          footer: (() { final p = bestRacePace(5); return p != null ? 'Pace: $p' : null; })(),
+                          footer: (() { final p = bestRacePace(5); return p; })(),
                         ),
                         _metricCard(
                           context,
@@ -261,7 +261,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                           title: 'RP nos 10km',
                           value: _formatDuration(bestForKm(10)),
                           subtitle: bestRaceLabel(10),
-                          footer: (() { final p = bestRacePace(10); return p != null ? 'Pace: $p' : null; })(),
+                          footer: (() { final p = bestRacePace(10); return p; })(),
                         ),
                         _metricCard(
                           context,
@@ -269,7 +269,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                           title: 'RP nos 21km',
                           value: _formatDuration(bestForKm(21)),
                           subtitle: bestRaceLabel(21),
-                          footer: (() { final p = bestRacePace(21); return p != null ? 'Pace: $p' : null; })(),
+                          footer: (() { final p = bestRacePace(21); return p; })(),
                         ),
                         _metricCard(
                           context,
@@ -277,7 +277,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                           title: 'RP nos 42km',
                           value: _formatDuration(bestForKm(42)),
                           subtitle: bestRaceLabel(42),
-                          footer: (() { final p = bestRacePace(42); return p != null ? 'Pace: $p' : null; })(),
+                          footer: (() { final p = bestRacePace(42); return p; })(),
                         ),
                         _metricCard(context, emoji: '🏆', title: 'Total de Corridas', value: '$totalCorridasConcluidas'),
                         _metricCard(context, emoji: '📍', title: 'Distância Total', value: '${distanciaTotal.toStringAsFixed(1)} km'),

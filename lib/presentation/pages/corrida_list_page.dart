@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/data/models/counter.dart';
 import 'package:gercorridas/core/text_sanitizer.dart';
+import 'package:gercorridas/domain/time_utils.dart';
 
 class CorridaListPage extends ConsumerStatefulWidget {
   const CorridaListPage({super.key});
@@ -382,10 +383,26 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                             );
                             final effectiveDate = baseLocal;
                             final isFuture = effectiveDate.isAfter(now);
-                            final hasDecimals = c.distanceKm % 1 != 0;
-                            final distLabel = hasDecimals
-                                ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
-                                : c.distanceKm.toStringAsFixed(0);
+                          final hasDecimals = c.distanceKm % 1 != 0;
+                          final distLabel = hasDecimals
+                              ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
+                              : c.distanceKm.toStringAsFixed(0);
+                          final isConcluded = c.status == 'concluida' && (c.finishTime?.isNotEmpty ?? false);
+                          Duration? finishDur;
+                          if (isConcluded) {
+                            final parts = c.finishTime!.split(':');
+                            if (parts.length == 3) {
+                              final h = int.tryParse(parts[0]) ?? 0;
+                              final m = int.tryParse(parts[1]) ?? 0;
+                              final s = int.tryParse(parts[2]) ?? 0;
+                              finishDur = Duration(hours: h, minutes: m, seconds: s);
+                            } else if (parts.length == 2) {
+                              final m = int.tryParse(parts[0]) ?? 0;
+                              final s = int.tryParse(parts[1]) ?? 0;
+                              finishDur = Duration(minutes: m, seconds: s);
+                            }
+                          }
+                          final paceStr = isConcluded ? computePace(finishDur, c.distanceKm) : null;
 
                             return Card(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -493,10 +510,9 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                                       ),
                                       const SizedBox(height: 8),
                                       Table(
-                                        columnWidths: const {
-                                          0: FlexColumnWidth(),
-                                          1: FlexColumnWidth(),
-                                        },
+                                        columnWidths: isConcluded
+                                            ? const {0: FlexColumnWidth(), 1: FlexColumnWidth(), 2: FlexColumnWidth()}
+                                            : const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
                                         defaultVerticalAlignment: TableCellVerticalAlignment.top,
                                         children: [
                                           TableRow(children: [
@@ -516,6 +532,15 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                                                 Text(DateFormat('HH:mm').format(effectiveDate), style: const TextStyle(fontSize: 14)),
                                               ],
                                             ),
+                                            if (isConcluded)
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text('Tempo:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                                                  const SizedBox(height: 4),
+                                                  Text(c.finishTime ?? '—', style: const TextStyle(fontSize: 14)),
+                                                ],
+                                              ),
                                           ]),
                                           TableRow(children: [
                                             Column(
@@ -539,6 +564,15 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                                                 ),
                                               ],
                                             ),
+                                            if (isConcluded)
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text('Pace:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                                                  const SizedBox(height: 4),
+                                                  Text(paceStr ?? '—', style: const TextStyle(fontSize: 12)),
+                                                ],
+                                              ),
                                           ]),
                                         ],
                                       ),

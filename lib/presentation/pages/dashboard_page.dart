@@ -403,7 +403,7 @@ class DashboardPage extends ConsumerWidget {
                 Row(children: [const Icon(Icons.timelapse, size: 16), const SizedBox(width: 6), Text(finishTime?.isNotEmpty == true ? finishTime! : '-')]),
                 const SizedBox(height: 8),
                 if (pace() != null)
-                  Row(children: [const Icon(Icons.speed, size: 16), const SizedBox(width: 6), Text('Pace: ${pace()}', style: const TextStyle(fontSize: 12))]),
+                  Row(children: [const Icon(Icons.speed, size: 16), const SizedBox(width: 6), Text('${pace()}', style: const TextStyle(fontSize: 12))]),
               ]),
             ),
           ]),
