@@ -36,6 +36,14 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
   void initState() {
     super.initState();
     _loadForEditIfNeeded();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final t = _categoryCtrl.text.trim();
+      if (t.isNotEmpty) {
+        _categoryFieldCtrl?.text = t;
+        _categoryFieldCtrl?.selection = TextSelection.collapsed(offset: t.length);
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _loadForEditIfNeeded() async {
@@ -49,6 +57,9 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
           _nameCtrl.text = c.name;
           _descCtrl.text = c.description ?? '';
           _categoryCtrl.text = c.category ?? '';
+          final catText = c.category ?? '';
+          _categoryFieldCtrl?.text = catText;
+          _categoryFieldCtrl?.selection = TextSelection.collapsed(offset: catText.length);
           final dist = c.distanceKm;
           final distStr = (dist % 1 == 0)
               ? dist.toStringAsFixed(0)
