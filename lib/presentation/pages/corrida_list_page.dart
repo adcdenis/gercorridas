@@ -264,76 +264,77 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
             ]),
             const SizedBox(height: 8),
             // Linha de etiquetas (chips) selecionáveis de categorias
-            countersAsync.when(
-              loading: () => const SizedBox(height: 32, child: Align(alignment: Alignment.centerLeft, child: CircularProgressIndicator())),
-              error: (e, _) => const SizedBox.shrink(),
-              data: (items) {
-                final presentCats = <String>{
-                  for (final c in items)
-                    if ((c.category ?? '').trim().isNotEmpty) (c.category!)
-                };
+            if (_showSearch)
+              countersAsync.when(
+                loading: () => const SizedBox(height: 32, child: Align(alignment: Alignment.centerLeft, child: CircularProgressIndicator())),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (items) {
+                  final presentCats = <String>{
+                    for (final c in items)
+                      if ((c.category ?? '').trim().isNotEmpty) (c.category!)
+                  };
 
-                final catsData = categoriesAsync.asData?.value ?? const [];
-                final nameByNormalized = {for (final cat in catsData) cat.normalized: cat.name};
+                  final catsData = categoriesAsync.asData?.value ?? const [];
+                  final nameByNormalized = {for (final cat in catsData) cat.normalized: cat.name};
 
-                final present = <String>{...presentCats, ..._selectedCategories};
+                  final present = <String>{...presentCats, ..._selectedCategories};
 
-                final chips = present.map((norm) {
-                  final selected = _selectedCategories.contains(norm);
-                  final scheme = Theme.of(context).colorScheme;
-                  final labelStyle = TextStyle(
-                    color: selected ? scheme.onPrimaryContainer : scheme.onSecondaryContainer,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 12,
-                  );
-                  return FilterChip(
-                    selected: selected,
-                    showCheckmark: true,
-                    checkmarkColor: scheme.onPrimaryContainer,
-                    avatar: Icon(
-                      Icons.local_offer,
-                      size: 14,
+                  final chips = present.map((norm) {
+                    final selected = _selectedCategories.contains(norm);
+                    final scheme = Theme.of(context).colorScheme;
+                    final labelStyle = TextStyle(
                       color: selected ? scheme.onPrimaryContainer : scheme.onSecondaryContainer,
-                    ),
-                    label: Text(nameByNormalized[norm] ?? norm, style: labelStyle),
-                    visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                    backgroundColor: selected ? scheme.primaryContainer : scheme.secondaryContainer,
-                    selectedColor: scheme.primaryContainer,
-                    side: BorderSide(
-                      color: selected ? scheme.primary : scheme.outlineVariant,
-                      width: selected ? 2 : 1,
-                    ),
-                    elevation: selected ? 1 : 0,
-                    onSelected: (v) async {
-                      setState(() {
-                        if (v) {
-                          _selectedCategories.add(norm);
-                        } else {
-                          _selectedCategories.remove(norm);
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      fontSize: 12,
+                    );
+                    return FilterChip(
+                      selected: selected,
+                      showCheckmark: true,
+                      checkmarkColor: scheme.onPrimaryContainer,
+                      avatar: Icon(
+                        Icons.local_offer,
+                        size: 14,
+                        color: selected ? scheme.onPrimaryContainer : scheme.onSecondaryContainer,
+                      ),
+                      label: Text(nameByNormalized[norm] ?? norm, style: labelStyle),
+                      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      backgroundColor: selected ? scheme.primaryContainer : scheme.secondaryContainer,
+                      selectedColor: scheme.primaryContainer,
+                      side: BorderSide(
+                        color: selected ? scheme.primary : scheme.outlineVariant,
+                        width: selected ? 2 : 1,
+                      ),
+                      elevation: selected ? 1 : 0,
+                      onSelected: (v) async {
+                        setState(() {
+                          if (v) {
+                            _selectedCategories.add(norm);
+                          } else {
+                            _selectedCategories.remove(norm);
+                          }
+                        });
+                        try {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setStringList(_prefsKeyFilterCategories, _selectedCategories.toList());
+                        } catch (_) {
+                          // Ignora erros de persistência
                         }
-                      });
-                      try {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setStringList(_prefsKeyFilterCategories, _selectedCategories.toList());
-                      } catch (_) {
-                        // Ignora erros de persistência
-                      }
-                    },
-                  );
-                }).toList();
+                      },
+                    );
+                  }).toList();
 
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: chips,
-                  ),
-                );
-              },
-            ),
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: chips,
+                    ),
+                  );
+                },
+              ),
             const SizedBox(height: 16),
             countersAsync.when(
               loading: () => const Expanded(child: Center(child: CircularProgressIndicator())),
