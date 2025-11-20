@@ -40,6 +40,7 @@ class DashboardPage extends ConsumerWidget {
           final pretendo = countStatus('pretendo_ir');
           final canceladas = countStatus('cancelada');
           final naoPude = countStatus('nao_pude_ir');
+          final naDuvida = countStatus('na_duvida');
 
           final upcomingInscritas = filteredByYear
               .map((c) => (c, effectiveDate(c.eventDate)))
@@ -102,6 +103,7 @@ class DashboardPage extends ConsumerWidget {
                       _statCard(context, title: 'Pretendo Ir', value: pretendo, color: cs.surface, emoji: '🎯', width: double.infinity),
                       _statCard(context, title: 'Canceladas', value: canceladas, color: cs.surface, emoji: '✖️', width: double.infinity),
                       _statCard(context, title: 'Não Pude Ir', value: naoPude, color: cs.surface, emoji: '⏱️', width: double.infinity),
+                      _statCard(context, title: 'Na Dúvida', value: naDuvida, color: cs.surface, emoji: '🤔', width: double.infinity),
                     ],
                   );
                 }),

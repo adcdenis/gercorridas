@@ -52,7 +52,7 @@ android {
 
     defaultConfig {
         applicationId "com.gercorridas.app"
-        minSdk 23
+        minSdkVersion flutter.minSdkVersion
         targetSdk flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

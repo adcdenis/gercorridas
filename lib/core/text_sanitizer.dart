@@ -32,7 +32,7 @@ String buildShareText(Counter counter, DateTime effectiveDate, bool isFuture) {
   final timeText = isFuture ? 'Faltam' : 'Passaram';
   String formattedTime = '';
   if (comps.years > 0) formattedTime += '${comps.years} ano${comps.years == 1 ? '' : 's'}, ';
-  if (comps.months > 0) formattedTime += '${comps.months} mês${comps.months == 1 ? '' : 'es'}, ';
+  if (comps.months > 0) formattedTime += '${comps.months} ${comps.months == 1 ? 'mês' : 'meses'}, ';
   if (comps.days > 0) formattedTime += '${comps.days} dia${comps.days == 1 ? '' : 's'}, ';
   if (comps.hours > 0) formattedTime += '${comps.hours} hora${comps.hours == 1 ? '' : 's'}, ';
   if (comps.minutes > 0) formattedTime += '${comps.minutes} minuto${comps.minutes == 1 ? '' : 's'}, ';
