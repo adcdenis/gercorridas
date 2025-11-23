@@ -71,3 +71,47 @@ android {
 flutter {
     source '../..'
 }
+
+tasks.register('renameReleaseApk') {
+    group = 'build'
+    dependsOn 'assembleRelease'
+    doLast {
+        def manifestText = file('src/main/AndroidManifest.xml').getText('UTF-8')
+        def m = (manifestText =~ /android:label="([^"]+)"/)
+        def label = m.find() ? m.group(1) : 'App'
+
+        def pubspecText = rootProject.file('../pubspec.yaml').getText('UTF-8')
+        def vm = (pubspecText =~ /version:\s*([\w\.\-\+]+)/)
+        def versionRaw = vm.find() ? vm.group(1) : '0.0.0+1'
+        def version = versionRaw.split('\\+')[0]
+
+        def timestamp = new java.text.SimpleDateFormat('yyyyMMdd_HHmmss').format(new Date())
+        def newName = "${label}-${version}-${timestamp}.apk"
+
+        def outputsDir = layout.buildDirectory.dir('outputs/apk/release').get().asFile
+        def standardApk = new File(outputsDir, 'app-release.apk')
+        if (standardApk.exists()) {
+            copy {
+                from standardApk.getParentFile()
+                include standardApk.getName()
+                into outputsDir
+                rename { String _ -> newName }
+            }
+        }
+
+        def flutterApkDir = rootProject.layout.buildDirectory.dir('app/outputs/flutter-apk').get().asFile
+        def flutterApk = new File(flutterApkDir, 'app-release.apk')
+        if (flutterApk.exists()) {
+            copy {
+                from flutterApk.getParentFile()
+                include flutterApk.getName()
+                into flutterApkDir
+                rename { String _ -> newName }
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.findByName('assembleRelease')?.finalizedBy(tasks.findByName('renameReleaseApk'))
+}
