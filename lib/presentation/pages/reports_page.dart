@@ -113,18 +113,24 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   String _formatDiff(DateTime target) {
     final diff = calendarDiff(_now, target);
     final parts = <String>[];
-    if (diff.years > 0)
+    if (diff.years > 0) {
       parts.add('${diff.years} ano${diff.years == 1 ? '' : 's'}');
-    if (diff.months > 0)
+    }
+    if (diff.months > 0) {
       parts.add('${diff.months} ${diff.months == 1 ? 'mês' : 'meses'}');
-    if (diff.days > 0)
+    }
+    if (diff.days > 0) {
       parts.add('${diff.days} dia${diff.days == 1 ? '' : 's'}');
-    if (diff.hours > 0)
+    }
+    if (diff.hours > 0) {
       parts.add('${diff.hours} hora${diff.hours == 1 ? '' : 's'}');
-    if (diff.minutes > 0)
+    }
+    if (diff.minutes > 0) {
       parts.add('${diff.minutes} minuto${diff.minutes == 1 ? '' : 's'}');
-    if (parts.isEmpty)
+    }
+    if (parts.isEmpty) {
       parts.add('${diff.seconds} segundo${diff.seconds == 1 ? '' : 's'}');
+    }
     return parts.join(', ');
   }
 
