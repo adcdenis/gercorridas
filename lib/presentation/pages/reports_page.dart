@@ -110,27 +110,58 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     return base;
   }
 
-
   String _formatDiff(DateTime target) {
     final diff = calendarDiff(_now, target);
     final parts = <String>[];
-    if (diff.years > 0) parts.add('${diff.years} ano${diff.years == 1 ? '' : 's'}');
-    if (diff.months > 0) parts.add('${diff.months} ${diff.months == 1 ? 'mês' : 'meses'}');
-    if (diff.days > 0) parts.add('${diff.days} dia${diff.days == 1 ? '' : 's'}');
-    if (diff.hours > 0) parts.add('${diff.hours} hora${diff.hours == 1 ? '' : 's'}');
-    if (diff.minutes > 0) parts.add('${diff.minutes} minuto${diff.minutes == 1 ? '' : 's'}');
-    if (parts.isEmpty) parts.add('${diff.seconds} segundo${diff.seconds == 1 ? '' : 's'}');
+    if (diff.years > 0)
+      parts.add('${diff.years} ano${diff.years == 1 ? '' : 's'}');
+    if (diff.months > 0)
+      parts.add('${diff.months} ${diff.months == 1 ? 'mês' : 'meses'}');
+    if (diff.days > 0)
+      parts.add('${diff.days} dia${diff.days == 1 ? '' : 's'}');
+    if (diff.hours > 0)
+      parts.add('${diff.hours} hora${diff.hours == 1 ? '' : 's'}');
+    if (diff.minutes > 0)
+      parts.add('${diff.minutes} minuto${diff.minutes == 1 ? '' : 's'}');
+    if (parts.isEmpty)
+      parts.add('${diff.seconds} segundo${diff.seconds == 1 ? '' : 's'}');
     return parts.join(', ');
   }
 
-  List<model.Counter> _applyFilters(List<model.Counter> list, List<String> categories) {
+  List<model.Counter> _applyFilters(
+    List<model.Counter> list,
+    List<String> categories,
+  ) {
     List<model.Counter> out = List.of(list);
     // Date range filters (inclusive day)
     if (_startDate != null) {
-      out = out.where((c) => c.eventDate.isAfter(DateTime(_startDate!.year, _startDate!.month, _startDate!.day).subtract(const Duration(seconds: 1)))).toList();
+      out = out
+          .where(
+            (c) => c.eventDate.isAfter(
+              DateTime(
+                _startDate!.year,
+                _startDate!.month,
+                _startDate!.day,
+              ).subtract(const Duration(seconds: 1)),
+            ),
+          )
+          .toList();
     }
     if (_endDate != null) {
-      out = out.where((c) => c.eventDate.isBefore(DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59))).toList();
+      out = out
+          .where(
+            (c) => c.eventDate.isBefore(
+              DateTime(
+                _endDate!.year,
+                _endDate!.month,
+                _endDate!.day,
+                23,
+                59,
+                59,
+              ),
+            ),
+          )
+          .toList();
     }
     if (_type != 'Todos') {
       out = out.where((c) {
@@ -144,7 +175,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }
     if (_descCtrl.text.trim().isNotEmpty) {
       final q = _descCtrl.text.trim().toLowerCase();
-      out = out.where((c) => (c.description ?? '').toLowerCase().contains(q)).toList();
+      out = out
+          .where((c) => (c.description ?? '').toLowerCase().contains(q))
+          .toList();
     }
     return out;
   }
@@ -189,7 +222,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   Future<void> _generateAndShareXlsx(List<ReportRow> rows) async {
     final file = await generateXlsxReport(rows);
-    await shareFile(file, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    await shareFile(
+      file,
+      mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
   }
 
   Future<void> _generateAndSharePdf(List<ReportRow> rows) async {
@@ -199,8 +236,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   Future<void> _recalcAndShareXlsx() async {
     setState(() => _now = DateTime.now());
-    final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
-    final catsData = ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
+    final counters =
+        ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
+    final catsData =
+        ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
     final cats = catsData.map((c) => c.name).toList();
     final filtered = _applyFilters(counters, cats);
     final rows = _toReportRows(filtered);
@@ -210,8 +249,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   Future<void> _recalcAndSharePdf() async {
     setState(() => _now = DateTime.now());
-    final counters = ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
-    final catsData = ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
+    final counters =
+        ref.read(corridasProvider).asData?.value ?? const <model.Counter>[];
+    final catsData =
+        ref.read(categoriesProvider).asData?.value ?? const <cat.Category>[];
     final cats = catsData.map((c) => c.name).toList();
     final filtered = _applyFilters(counters, cats);
     final rows = _toReportRows(filtered);
@@ -231,11 +272,16 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: const [
-            Text('📈', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
-            Text('Relatórios', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
-          ]),
+          Row(
+            children: const [
+              Text('📈', style: TextStyle(fontSize: 18)),
+              SizedBox(width: 8),
+              Text(
+                'Relatórios',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           const Text('Gere relatórios detalhados das suas corridas.'),
           const SizedBox(height: 16),
@@ -248,7 +294,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Filtros', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Filtros',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
@@ -266,7 +315,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                               onPressed: () => _pickStartDate(context),
                             ),
                           ),
-                          controller: TextEditingController(text: _startDate == null ? '' : df.format(_startDate!)),
+                          controller: TextEditingController(
+                            text: _startDate == null
+                                ? ''
+                                : df.format(_startDate!),
+                          ),
                           onTap: () => _pickStartDate(context),
                         ),
                       ),
@@ -282,38 +335,64 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                               onPressed: () => _pickEndDate(context),
                             ),
                           ),
-                          controller: TextEditingController(text: _endDate == null ? '' : df.format(_endDate!)),
+                          controller: TextEditingController(
+                            text: _endDate == null ? '' : df.format(_endDate!),
+                          ),
                           onTap: () => _pickEndDate(context),
                         ),
                       ),
                       SizedBox(
                         width: 150,
                         child: DropdownButtonFormField<String>(
-                          value: _type,
+                          initialValue: _type,
                           items: const [
-                            DropdownMenuItem(value: 'Todos', child: Text('Todos')),
-                            DropdownMenuItem(value: 'Passado', child: Text('Passado')),
-                            DropdownMenuItem(value: 'Futuro', child: Text('Futuro')),
+                            DropdownMenuItem(
+                              value: 'Todos',
+                              child: Text('Todos'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Passado',
+                              child: Text('Passado'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Futuro',
+                              child: Text('Futuro'),
+                            ),
                           ],
-                          onChanged: (v) => setState(() => _type = v ?? 'Todos'),
+                          onChanged: (v) =>
+                              setState(() => _type = v ?? 'Todos'),
                           decoration: const InputDecoration(labelText: 'Tipo'),
                         ),
                       ),
                       categoriesAsync.when(
-                        loading: () => const SizedBox(width: 150, child: LinearProgressIndicator()),
-                        error: (e, st) => SizedBox(width: 150, child: Text('Erro categorias')), 
+                        loading: () => const SizedBox(
+                          width: 150,
+                          child: LinearProgressIndicator(),
+                        ),
+                        error: (e, st) => SizedBox(
+                          width: 150,
+                          child: Text('Erro categorias'),
+                        ),
                         data: (cats) {
                           final items = ['Todas', ...cats.map((c) => c.name)];
                           if (!items.contains(_category)) _category = 'Todas';
                           return SizedBox(
                             width: 150,
                             child: DropdownButtonFormField<String>(
-                              value: _category,
+                              initialValue: _category,
                               items: items
-                                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                  .map(
+                                    (c) => DropdownMenuItem(
+                                      value: c,
+                                      child: Text(c),
+                                    ),
+                                  )
                                   .toList(),
-                              onChanged: (v) => setState(() => _category = v ?? 'Todas'),
-                              decoration: const InputDecoration(labelText: 'Categoria'),
+                              onChanged: (v) =>
+                                  setState(() => _category = v ?? 'Todas'),
+                              decoration: const InputDecoration(
+                                labelText: 'Categoria',
+                              ),
                             ),
                           );
                         },
@@ -347,26 +426,38 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         loading: () => const SizedBox(),
                         error: (e, st) => const SizedBox(),
                         data: (counters) {
-                          final cats = categoriesAsync.maybeWhen(data: (v) => v.map((c) => c.name).toList(), orElse: () => <String>[]);
+                          final cats = categoriesAsync.maybeWhen(
+                            data: (v) => v.map((c) => c.name).toList(),
+                            orElse: () => <String>[],
+                          );
                           final filtered = _applyFilters(counters, cats);
-                          return Wrap(spacing: 8, children: [
-                            FilledButton.icon(
-                              onPressed: filtered.isEmpty ? null : _recalcAndShareXlsx,
-                              icon: const Icon(Icons.grid_on),
-                              label: const Text('Gerar Excel'),
-                            ),
-                            FilledButton.icon(
-                              onPressed: filtered.isEmpty ? null : _recalcAndSharePdf,
-                              icon: const Icon(Icons.picture_as_pdf),
-                              label: const Text('Gerar PDF'),
-                            ),
-                            Text('Atualizado às ${DateFormat('HH:mm').format(_now)}',
-                                style: TextStyle(color: cs.onSurfaceVariant)),
-                          ]);
+                          return Wrap(
+                            spacing: 8,
+                            children: [
+                              FilledButton.icon(
+                                onPressed: filtered.isEmpty
+                                    ? null
+                                    : _recalcAndShareXlsx,
+                                icon: const Icon(Icons.grid_on),
+                                label: const Text('Gerar Excel'),
+                              ),
+                              FilledButton.icon(
+                                onPressed: filtered.isEmpty
+                                    ? null
+                                    : _recalcAndSharePdf,
+                                icon: const Icon(Icons.picture_as_pdf),
+                                label: const Text('Gerar PDF'),
+                              ),
+                              Text(
+                                'Atualizado às ${DateFormat('HH:mm').format(_now)}',
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
+                            ],
+                          );
                         },
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -378,7 +469,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, st) => Center(child: Text('Erro ao carregar: $e')),
             data: (counters) {
-              final cats = categoriesAsync.maybeWhen(data: (v) => v.map((c) => c.name).toList(), orElse: () => <String>[]);
+              final cats = categoriesAsync.maybeWhen(
+                data: (v) => v.map((c) => c.name).toList(),
+                orElse: () => <String>[],
+              );
               final filtered = _applyFilters(counters, cats);
 
               return Card(
@@ -388,8 +482,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${filtered.length} corrida(s) encontrada(s)',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        '${filtered.length} corrida(s) encontrada(s)',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 8),
                       ListView.separated(
                         shrinkWrap: true,
@@ -402,11 +498,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                           final isFuture = eff.isAfter(_now);
                           final hasDecimals = c.distanceKm % 1 != 0;
                           final distLabel = hasDecimals
-                              ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
+                              ? NumberFormat.decimalPattern(
+                                  'pt_BR',
+                                ).format(c.distanceKm)
                               : c.distanceKm.toStringAsFixed(0);
 
                           return Card(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                             child: Container(
                               decoration: BoxDecoration(
@@ -416,8 +516,22 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: isFuture
-                                      ? [cs.primaryContainer.withValues(alpha: 0.6), cs.primaryContainer.withValues(alpha: 0.3)]
-                                      : [cs.errorContainer.withValues(alpha: 0.6), cs.errorContainer.withValues(alpha: 0.3)],
+                                      ? [
+                                          cs.primaryContainer.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          cs.primaryContainer.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ]
+                                      : [
+                                          cs.errorContainer.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          cs.errorContainer.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ],
                                 ),
                               ),
                               padding: const EdgeInsets.all(12),
@@ -442,99 +556,237 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   Table(
-                                    columnWidths: (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
-                                        ? const {0: FlexColumnWidth(), 1: FlexColumnWidth(), 2: FlexColumnWidth()}
-                                        : const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
-                                    defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                                    columnWidths:
+                                        (c.status == 'concluida' &&
+                                            (c.finishTime ?? '').isNotEmpty)
+                                        ? const {
+                                            0: FlexColumnWidth(),
+                                            1: FlexColumnWidth(),
+                                            2: FlexColumnWidth(),
+                                          }
+                                        : const {
+                                            0: FlexColumnWidth(),
+                                            1: FlexColumnWidth(),
+                                          },
+                                    defaultVerticalAlignment:
+                                        TableCellVerticalAlignment.top,
                                     children: [
-                                      TableRow(children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Data:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                            const SizedBox(height: 4),
-                                            Text(DateFormat('dd/MM/yyyy').format(eff), style: const TextStyle(fontSize: 14)),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Horário:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                            const SizedBox(height: 4),
-                                            Text(DateFormat('HH:mm').format(eff), style: const TextStyle(fontSize: 14)),
-                                          ],
-                                        ),
-                                        if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                                      TableRow(
+                                        children: [
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text('Tempo:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                              Text(
+                                                'Data:',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
                                               const SizedBox(height: 4),
-                                              Text(c.finishTime!, style: const TextStyle(fontSize: 14)),
+                                              Text(
+                                                DateFormat(
+                                                  'dd/MM/yyyy',
+                                                ).format(eff),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                      ]),
-                                      TableRow(children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Distância:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                            const SizedBox(height: 4),
-                                            Text('$distLabel km', style: const TextStyle(fontSize: 14)),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Preço:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              c.price != null
-                                                  ? NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(c.price)
-                                                  : '—',
-                                              style: const TextStyle(fontSize: 14),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Horário:',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                DateFormat('HH:mm').format(eff),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (c.status == 'concluida' &&
+                                              (c.finishTime ?? '').isNotEmpty)
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Tempo:',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: cs.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  c.finishTime!,
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                        if (c.status == 'concluida' && (c.finishTime ?? '').isNotEmpty)
+                                        ],
+                                      ),
+                                      TableRow(
+                                        children: [
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text('Pace:', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                              Text(
+                                                'Distância:',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
                                               const SizedBox(height: 4),
-                                              Builder(builder: (_) {
-                                                final parts = c.finishTime!.split(':');
-                                                Duration? total;
-                                                if (parts.length == 3) {
-                                                  final h = int.tryParse(parts[0]) ?? 0;
-                                                  final m = int.tryParse(parts[1]) ?? 0;
-                                                  final s = int.tryParse(parts[2]) ?? 0;
-                                                  total = Duration(hours: h, minutes: m, seconds: s);
-                                                } else if (parts.length == 2) {
-                                                  final m = int.tryParse(parts[0]) ?? 0;
-                                                  final s = int.tryParse(parts[1]) ?? 0;
-                                                  total = Duration(minutes: m, seconds: s);
-                                                }
-                                                final ps = computePace(total, c.distanceKm);
-                                                return Text(ps ?? '—', style: const TextStyle(fontSize: 12));
-                                              }),
+                                              Text(
+                                                '$distLabel km',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                      ]),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Preço:',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                c.price != null
+                                                    ? NumberFormat.currency(
+                                                        locale: 'pt_BR',
+                                                        symbol: 'R\$',
+                                                      ).format(c.price)
+                                                    : '—',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (c.status == 'concluida' &&
+                                              (c.finishTime ?? '').isNotEmpty)
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Pace:',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: cs.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Builder(
+                                                  builder: (_) {
+                                                    final parts = c.finishTime!
+                                                        .split(':');
+                                                    Duration? total;
+                                                    if (parts.length == 3) {
+                                                      final h =
+                                                          int.tryParse(
+                                                            parts[0],
+                                                          ) ??
+                                                          0;
+                                                      final m =
+                                                          int.tryParse(
+                                                            parts[1],
+                                                          ) ??
+                                                          0;
+                                                      final s =
+                                                          int.tryParse(
+                                                            parts[2],
+                                                          ) ??
+                                                          0;
+                                                      total = Duration(
+                                                        hours: h,
+                                                        minutes: m,
+                                                        seconds: s,
+                                                      );
+                                                    } else if (parts.length ==
+                                                        2) {
+                                                      final m =
+                                                          int.tryParse(
+                                                            parts[0],
+                                                          ) ??
+                                                          0;
+                                                      final s =
+                                                          int.tryParse(
+                                                            parts[1],
+                                                          ) ??
+                                                          0;
+                                                      total = Duration(
+                                                        minutes: m,
+                                                        seconds: s,
+                                                      );
+                                                    }
+                                                    final ps = computePace(
+                                                      total,
+                                                      c.distanceKm,
+                                                    );
+                                                    return Text(
+                                                      ps ?? '—',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: cs.primaryContainer,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(_iconForStatus(c.status), size: 14, color: cs.onPrimaryContainer),
+                                        Icon(
+                                          _iconForStatus(c.status),
+                                          size: 14,
+                                          color: cs.onPrimaryContainer,
+                                        ),
                                         const SizedBox(width: 6),
                                         Text(
                                           _labelForStatus(c.status),
-                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onPrimaryContainer),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onPrimaryContainer,
+                                          ),
                                         ),
                                       ],
                                     ),
