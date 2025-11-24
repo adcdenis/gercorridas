@@ -530,14 +530,11 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
       _suppressedChange = true;
       return;
     }
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 10), () async {
+    () async {
       try {
         await backupNow();
-      } catch (_) {
-        // ignora erros em auto-sync
-      }
-    });
+      } catch (_) {}
+    }();
   }
 
 

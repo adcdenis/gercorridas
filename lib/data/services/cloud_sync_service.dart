@@ -162,14 +162,11 @@ class NoopCloudSyncService implements CloudSyncService {
 
   void _onLocalChange() {
     if (!_auto) return;
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 10), () async {
+    () async {
       try {
         await backupNow();
-      } catch (_) {
-        // silencioso em modo Noop
-      }
-    });
+      } catch (_) {}
+    }();
   }
 }
 
