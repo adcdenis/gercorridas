@@ -22,6 +22,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
   static const _prefsKeyFilterCategory = 'counter_list_filter_category';
   static const _prefsKeyFilterCategories = 'counter_list_filter_categories';
   static const _prefsKeyFilterYear = 'counter_list_filter_year';
+  static const _prefsKeyFilterStatus = 'counter_list_filter_status';
   String _labelForStatus(String s) {
     switch (s) {
       case 'pretendo_ir':
@@ -90,8 +91,10 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
   Set<String> _selectedCategories = {};
+  String? _statusFilter;
   bool _showSearch = false;
   int _selectedYear = DateTime.now().year;
+  bool _appliedRouteFilters = false;
 
   @override
   void initState() {
@@ -106,6 +109,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
       final savedCategories = prefs.getStringList(_prefsKeyFilterCategories);
       final legacySingle = prefs.getString(_prefsKeyFilterCategory);
       final savedYear = prefs.getInt(_prefsKeyFilterYear);
+      final savedStatus = prefs.getString(_prefsKeyFilterStatus);
       if (mounted) {
         setState(() {
           _search = savedSearch;
@@ -114,12 +118,64 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
           _selectedCategories = set;
           _showSearch = savedSearch.isNotEmpty;
           _selectedYear = savedYear ?? DateTime.now().year;
+          _statusFilter = (savedStatus?.isNotEmpty ?? false) ? savedStatus : null;
         });
         _searchCtrl.text = savedSearch;
       }
     } catch (_) {
       // Ignora erros de persistência
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyRouteFiltersIfNeeded();
+  }
+
+  void _applyRouteFiltersIfNeeded() {
+    if (_appliedRouteFilters) return;
+    _appliedRouteFilters = true;
+    final state = GoRouterState.of(context);
+    final params = state.uri.queryParameters;
+    if (params.isEmpty) return;
+
+    final statusParam = params['status'];
+    final yearParam = params['year'];
+    if (statusParam == null && yearParam == null) return;
+
+    final parsedYear = yearParam != null ? int.tryParse(yearParam) : null;
+    final normalizedStatus = (statusParam == null || statusParam.isEmpty || statusParam == 'all')
+        ? null
+        : statusParam;
+
+    Future.microtask(() async {
+      if (!mounted) return;
+      setState(() {
+        if (parsedYear != null) _selectedYear = parsedYear;
+        _statusFilter = normalizedStatus;
+        _showSearch = true;
+        _search = '';
+        _searchCtrl.text = '';
+        _selectedCategories.clear();
+      });
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (parsedYear != null) {
+          await prefs.setInt(_prefsKeyFilterYear, parsedYear);
+        }
+        if (normalizedStatus != null) {
+          await prefs.setString(_prefsKeyFilterStatus, normalizedStatus);
+        } else {
+          await prefs.remove(_prefsKeyFilterStatus);
+        }
+        await prefs.remove(_prefsKeyFilterSearch);
+        await prefs.remove(_prefsKeyFilterCategory); // legado
+        await prefs.remove(_prefsKeyFilterCategories);
+      } catch (_) {
+        // Ignora erros de persistência
+      }
+    });
   }
 
   @override
@@ -176,7 +232,22 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                   message: _showSearch ? 'Ocultar filtro' : 'Mostrar filtro',
                   child: IconButton.filledTonal(
                     icon: Icon(_showSearch ? Icons.search_off : Icons.search),
-                    onPressed: () => setState(() => _showSearch = !_showSearch),
+                    onPressed: () async {
+                      if (_showSearch) {
+                        setState(() {
+                          _showSearch = false;
+                          _statusFilter = null;
+                        });
+                        try {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.remove(_prefsKeyFilterStatus);
+                        } catch (_) {
+                          // Ignora erros de persistência
+                        }
+                      } else {
+                        setState(() => _showSearch = true);
+                      }
+                    },
                   ),
                 ),
               ],
@@ -241,12 +312,14 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                       _search = '';
                       _searchCtrl.clear();
                       _selectedCategories.clear();
+                      _statusFilter = null;
                     });
                     try {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.remove(_prefsKeyFilterSearch);
                       await prefs.remove(_prefsKeyFilterCategory); // legado
                       await prefs.remove(_prefsKeyFilterCategories);
+                      await prefs.remove(_prefsKeyFilterStatus);
                     } catch (_) {
                       // Ignora erros de persistência
                     }
@@ -263,6 +336,48 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
               ),
             ]),
             const SizedBox(height: 8),
+            if (_showSearch)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: SizedBox(
+                  height: 48,
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey(_statusFilter ?? 'all'),
+                    initialValue: _statusFilter ?? 'all',
+                    decoration: InputDecoration(
+                      labelText: 'Status',
+                      filled: true,
+                      fillColor: scheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      isDense: true,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'all', child: Text('Todos')),
+                      DropdownMenuItem(value: 'pretendo_ir', child: Text('Pretendo ir')),
+                      DropdownMenuItem(value: 'inscrito', child: Text('Inscrito')),
+                      DropdownMenuItem(value: 'concluida', child: Text('Concluída')),
+                      DropdownMenuItem(value: 'cancelada', child: Text('Cancelada')),
+                      DropdownMenuItem(value: 'nao_pude_ir', child: Text('Não pude ir')),
+                      DropdownMenuItem(value: 'na_duvida', child: Text('Na dúvida')),
+                    ],
+                    onChanged: (value) async {
+                      final normalized = (value == null || value == 'all') ? null : value;
+                      setState(() => _statusFilter = normalized);
+                      try {
+                        final prefs = await SharedPreferences.getInstance();
+                        if (normalized == null) {
+                          await prefs.remove(_prefsKeyFilterStatus);
+                        } else {
+                          await prefs.setString(_prefsKeyFilterStatus, normalized);
+                        }
+                      } catch (_) {
+                        // Ignora erros de persistência
+                      }
+                    },
+                  ),
+                ),
+              ),
             // Linha de etiquetas (chips) selecionáveis de categorias
             if (_showSearch)
               countersAsync.when(
@@ -349,7 +464,8 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                           (c.description?.toLowerCase().contains(q) ?? false);
                       final cat = (c.category ?? '').trim();
                       final matchesCat = _selectedCategories.isEmpty || (cat.isNotEmpty && _selectedCategories.contains(cat));
-                      return matchesSearch && matchesCat;
+                      final matchesStatus = _statusFilter == null || c.status == _statusFilter;
+                      return matchesSearch && matchesCat && matchesStatus;
                     }).toList();
 
                 filtered.sort((a, b) => b.eventDate.compareTo(a.eventDate));

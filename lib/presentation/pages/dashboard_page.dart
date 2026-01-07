@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/state/providers.dart';
@@ -16,6 +17,14 @@ class DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final countersAsync = ref.watch(corridasProvider);
     final cs = Theme.of(context).colorScheme;
+
+    void openFilteredList({String? status, required int year}) {
+      final params = <String, String>{
+        'year': '$year',
+        'status': status ?? 'all',
+      };
+      context.go(Uri(path: '/corridas', queryParameters: params).toString());
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -97,13 +106,69 @@ class DashboardPage extends ConsumerWidget {
                       mainAxisExtent: extent,
                     ),
                     children: [
-                      _statCard(context, title: 'Total', value: total, color: cs.surface, emoji: '📈', width: double.infinity),
-                      _statCard(context, title: 'Inscritas', value: inscritas, color: cs.surface, emoji: '👥', width: double.infinity),
-                      _statCard(context, title: 'Concluídas', value: concluidas, color: cs.surface, emoji: '🏆', width: double.infinity),
-                      _statCard(context, title: 'Pretendo Ir', value: pretendo, color: cs.surface, emoji: '🎯', width: double.infinity),
-                      _statCard(context, title: 'Canceladas', value: canceladas, color: cs.surface, emoji: '✖️', width: double.infinity),
-                      _statCard(context, title: 'Não Pude Ir', value: naoPude, color: cs.surface, emoji: '⏱️', width: double.infinity),
-                      _statCard(context, title: 'Na Dúvida', value: naDuvida, color: cs.surface, emoji: '🤔', width: double.infinity),
+                      _statCard(
+                        context,
+                        title: 'Total',
+                        value: total,
+                        color: cs.surface,
+                        emoji: '📈',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Inscritas',
+                        value: inscritas,
+                        color: cs.surface,
+                        emoji: '👥',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'inscrito', year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Concluídas',
+                        value: concluidas,
+                        color: cs.surface,
+                        emoji: '🏆',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'concluida', year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Pretendo Ir',
+                        value: pretendo,
+                        color: cs.surface,
+                        emoji: '🎯',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'pretendo_ir', year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Canceladas',
+                        value: canceladas,
+                        color: cs.surface,
+                        emoji: '✖️',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'cancelada', year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Não Pude Ir',
+                        value: naoPude,
+                        color: cs.surface,
+                        emoji: '⏱️',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'nao_pude_ir', year: selectedYear),
+                      ),
+                      _statCard(
+                        context,
+                        title: 'Na Dúvida',
+                        value: naDuvida,
+                        color: cs.surface,
+                        emoji: '🤔',
+                        width: double.infinity,
+                        onTap: () => openFilteredList(status: 'na_duvida', year: selectedYear),
+                      ),
                     ],
                   );
                 }),
@@ -177,7 +242,15 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _statCard(BuildContext context, {required String title, required int value, required Color color, required String emoji, required double width}) {
+  Widget _statCard(
+    BuildContext context, {
+    required String title,
+    required int value,
+    required Color color,
+    required String emoji,
+    required double width,
+    VoidCallback? onTap,
+  }) {
     final cs = Theme.of(context).colorScheme;
     // Choose an appropriate text color based on the container color for better contrast
     // Map text color according to background for good contrast.
@@ -199,31 +272,35 @@ class DashboardPage extends ConsumerWidget {
       elevation: 0,
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
-      child: SizedBox(
-        width: width,
-        height: 64,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2.0),
-                child: Text(emoji, style: const TextStyle(fontSize: 18)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: onColor)),
-                    const SizedBox(height: 2),
-                    Text('$value', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: onColor)),
-                  ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          width: width,
+          height: 64,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2.0),
+                  child: Text(emoji, style: const TextStyle(fontSize: 18)),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: onColor)),
+                      const SizedBox(height: 2),
+                      Text('$value', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: onColor)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -309,20 +386,20 @@ class DashboardPage extends ConsumerWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Faltam:', style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Row(children: [
-                    if (comps.years > 0) _countBox('${comps.years}', comps.years == 1 ? 'ano' : 'anos', cs),
-                    const SizedBox(width: 6),
-                    if (comps.months > 0) _countBox('${comps.months}', comps.months == 1 ? 'mês' : 'meses', cs),
-                    const SizedBox(width: 6),
-                    if (comps.days > 0) _countBox('${comps.days}', comps.days == 1 ? 'dia' : 'dias', cs),
-                    const SizedBox(width: 6),
-                    if (comps.hours > 0) _countBox('${comps.hours}', comps.hours == 1 ? 'hora' : 'horas', cs),
-                    const SizedBox(width: 6),
-                    if (comps.minutes > 0) _countBox('${comps.minutes}', comps.minutes == 1 ? 'minuto' : 'minutos', cs),
-                    const SizedBox(width: 6),
-                    if (comps.seconds > 0 || (comps.years + comps.months + comps.days + comps.hours + comps.minutes) == 0)
-                      _countBox('${comps.seconds}', comps.seconds == 1 ? 'segundo' : 'segundos', cs),
-                  ]),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (comps.years > 0) _countBox('${comps.years}', comps.years == 1 ? 'ano' : 'anos', cs),
+                      if (comps.months > 0) _countBox('${comps.months}', comps.months == 1 ? 'mês' : 'meses', cs),
+                      if (comps.days > 0) _countBox('${comps.days}', comps.days == 1 ? 'dia' : 'dias', cs),
+                      if (comps.hours > 0) _countBox('${comps.hours}', comps.hours == 1 ? 'hora' : 'horas', cs),
+                      if (comps.minutes > 0) _countBox('${comps.minutes}', comps.minutes == 1 ? 'minuto' : 'minutos', cs),
+                      if (comps.seconds > 0 || (comps.years + comps.months + comps.days + comps.hours + comps.minutes) == 0)
+                        _countBox('${comps.seconds}', comps.seconds == 1 ? 'segundo' : 'segundos', cs),
+                    ],
+                  ),
                 ]),
               ),
             ),
