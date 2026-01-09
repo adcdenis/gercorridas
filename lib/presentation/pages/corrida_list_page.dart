@@ -468,7 +468,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                       return matchesSearch && matchesCat && matchesStatus;
                     }).toList();
 
-                filtered.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+                filtered.sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
                 if (filtered.isEmpty) {
                   return const Expanded(child: Center(child: Text('Nenhuma corrida encontrada.')));

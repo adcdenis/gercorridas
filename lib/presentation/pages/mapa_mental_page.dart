@@ -170,41 +170,24 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
                       const SizedBox(height: 12),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final isNarrow = constraints.maxWidth < 900;
-                          final columnWidth = isNarrow ? 220.0 : 260.0;
-                          const spacing = 12.0;
-                          final totalWidth = 12 * columnWidth + 11 * spacing;
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: totalWidth,
-                                  height: 18,
-                                  child: CustomPaint(
-                                    painter: _MindMapRailPainter(count: 12, columnWidth: columnWidth, spacing: spacing, color: cs.outline),
-                                  ),
+                          final columnWidth = constraints.maxWidth;
+                          final cardWidth = constraints.maxWidth < 600 ? constraints.maxWidth * 0.85 : 320.0;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (int m = 1; m <= 12; m++) ...[
+                                _monthBlock(
+                                  context,
+                                  month: m,
+                                  title: monthNames[m - 1],
+                                  items: byMonth[m]!,
+                                  width: columnWidth,
+                                  cardWidth: cardWidth,
+                                  spacingRight: 0,
                                 ),
-                                const SizedBox(height: 2),
-                                SizedBox(
-                                  width: totalWidth,
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      for (int m = 1; m <= 12; m++) _monthBlock(
-                                        context,
-                                        month: m,
-                                        title: monthNames[m - 1],
-                                        items: byMonth[m]!,
-                                        width: columnWidth,
-                                        spacingRight: m < 12 ? spacing : 0,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                if (m < 12) const SizedBox(height: 12),
                               ],
-                            ),
+                            ],
                           );
                         },
                       ),
@@ -219,7 +202,7 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
     );
   }
 
-  Widget _monthBlock(BuildContext context, {required int month, required String title, required List<model.Counter> items, required double width, required double spacingRight}) {
+  Widget _monthBlock(BuildContext context, {required int month, required String title, required List<model.Counter> items, required double width, required double cardWidth, required double spacingRight}) {
     final cs = Theme.of(context).colorScheme;
     final df = DateFormat('dd/MM/yyyy');
     final tf = DateFormat('HH:mm');
@@ -268,7 +251,20 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
             if (items.isEmpty)
               Text('Sem corridas', style: TextStyle(color: cs.onSurfaceVariant))
             else
-              Column(children: [for (final c in items) _raceCard(context, c, df, tf, currency, numfmt, cs)]),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < items.length; i++) ...[
+                      SizedBox(
+                        width: cardWidth,
+                        child: _raceCard(context, items[i], df, tf, currency, numfmt, cs),
+                      ),
+                      if (i < items.length - 1) const SizedBox(width: 12),
+                    ],
+                  ],
+                ),
+              ),
           ],
         ],
       ),
@@ -368,36 +364,4 @@ class _MapaMentalPageState extends ConsumerState<MapaMentalPage> {
     );
   }
 
-}
-
-class _MindMapRailPainter extends CustomPainter {
-  final int count;
-  final double columnWidth;
-  final double spacing;
-  final Color color;
-
-  _MindMapRailPainter({required this.count, required this.columnWidth, required this.spacing, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final railY = size.height * 0.5;
-    final startX = columnWidth * 0.5;
-    final endX = startX + (count - 1) * (columnWidth + spacing);
-    canvas.drawLine(Offset(startX, railY), Offset(endX, railY), p);
-
-    for (int i = 0; i < count; i++) {
-      final x = startX + i * (columnWidth + spacing);
-      canvas.drawLine(Offset(x, railY), Offset(x, size.height), p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MindMapRailPainter oldDelegate) {
-    return oldDelegate.count != count || oldDelegate.columnWidth != columnWidth || oldDelegate.spacing != spacing || oldDelegate.color != color;
-  }
 }
