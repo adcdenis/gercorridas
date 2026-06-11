@@ -3,12 +3,19 @@ import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/core/cloud/cloud_config.dart';
+import 'package:gercorridas/presentation/widgets/premium_paywall_widget.dart';
 
 class CloudBackupPage extends ConsumerWidget {
   const CloudBackupPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPro = ref.watch(premiumProvider);
+    if (!isPro) {
+      return const PremiumPaywallWidget(
+        customMessage: "Sincronize e faça backup automático de suas corridas diretamente no seu Google Drive.",
+      );
+    }
     final cloudSvc = ref.watch(cloudSyncServiceProvider);
     final cloudUserAsync = ref.watch(cloudUserProvider);
     final autoSyncAsync = ref.watch(cloudAutoSyncProvider);

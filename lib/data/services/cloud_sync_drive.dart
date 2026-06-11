@@ -11,6 +11,7 @@ import 'package:gercorridas/data/database/app_database.dart';
 import 'package:gercorridas/data/services/backup_codec.dart';
 import 'package:gercorridas/data/services/cloud_sync_service.dart';
 import 'package:gercorridas/core/cloud/cloud_config.dart';
+import 'package:gercorridas/state/premium_provider.dart' show isProVersion;
 
 /// HTTP client que injeta os headers de autenticação do Google
 class GoogleAuthClient extends http.BaseClient {
@@ -113,7 +114,8 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
   Future<void> _bootstrap() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _auto = prefs.getBool(_prefsKeyAutoSync) ?? false;
+      final isPro = isProVersion || (prefs.getBool('is_premium_pro') ?? false);
+      _auto = isPro ? (prefs.getBool(_prefsKeyAutoSync) ?? false) : false;
       // Notificar assinantes do estado carregado
       _autoSyncCtrl.add(_auto);
     } catch (_) {
@@ -131,7 +133,9 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
         // Se auto-sync habilitado, primeiro tenta sincronizar/restaurar do remoto
         // e só então inicia a observação contínua para evitar que mudanças
         // locais geradas na inicialização disparem um backup automático.
-        if (_auto) {
+        final prefs = await SharedPreferences.getInstance();
+        final isPro = isProVersion || (prefs.getBool('is_premium_pro') ?? false);
+        if (_auto && isPro) {
           // Executa sincronização automática de restauração ao iniciar, se necessário
           await _runStartupAutoSync();
           await startRealtimeSync();
@@ -314,6 +318,10 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
 
   @override
   Future<void> signInWithGoogle() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPro = isProVersion || (prefs.getBool('is_premium_pro') ?? false);
+    if (!isPro) throw 'O login e sincronização são exclusivos da versão Pro';
+
     final account = await _signIn.signIn();
     if (account == null) throw 'Login cancelado';
     _authCtrl.add(CloudUser(uid: account.id, displayName: account.displayName, email: account.email, photoUrl: account.photoUrl));
@@ -322,7 +330,6 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
     _auto = true;
     _autoSyncCtrl.add(true);
     try {
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefsKeyAutoSync, true);
     } catch (_) {}
     // Executa sincronização de inicialização (restaura se necessário) antes de iniciar observação contínua
@@ -343,10 +350,16 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
 
   @override
   Future<void> setAutoSyncEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPro = isProVersion || (prefs.getBool('is_premium_pro') ?? false);
+    if (!isPro) {
+      _auto = false;
+      _autoSyncCtrl.add(false);
+      return;
+    }
     _auto = enabled;
     _autoSyncCtrl.add(_auto);
     try {
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefsKeyAutoSync, _auto);
     } catch (_) {
       // Ignora erros de persistência
@@ -509,7 +522,9 @@ class GoogleDriveCloudSyncService implements CloudSyncService {
 
   @override
   Future<void> startRealtimeSync() async {
-    if (!_auto) return;
+    final prefs = await SharedPreferences.getInstance();
+    final isPro = isProVersion || (prefs.getBool('is_premium_pro') ?? false);
+    if (!isPro || !_auto) return;
     _countersSub ??= db.watchAllCounters().skip(1).listen((_) => _onLocalChange());
     // Política: não sincronizar por mudanças de categorias
   }

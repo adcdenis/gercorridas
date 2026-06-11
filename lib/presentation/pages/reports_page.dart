@@ -6,6 +6,7 @@ import 'package:gercorridas/domain/time_utils.dart';
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/domain/report_export.dart';
 import 'package:gercorridas/data/models/category.dart' as cat;
+import 'package:gercorridas/presentation/widgets/premium_paywall_widget.dart';
 
 class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
@@ -268,6 +269,12 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isPro = ref.watch(premiumProvider);
+    if (!isPro) {
+      return const PremiumPaywallWidget(
+        customMessage: "Gere relatórios customizados, exporte planilhas Excel e arquivos PDF de suas atividades.",
+      );
+    }
     final countersAsync = ref.watch(corridasProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final cs = Theme.of(context).colorScheme;

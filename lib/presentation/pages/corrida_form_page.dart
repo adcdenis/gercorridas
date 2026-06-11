@@ -7,6 +7,7 @@ import 'package:gercorridas/data/models/counter.dart' as model;
 import 'package:gercorridas/state/providers.dart';
 import 'package:gercorridas/data/models/category.dart' as cat;
 import 'package:gercorridas/domain/category_utils.dart';
+import 'package:gercorridas/presentation/widgets/premium_paywall_widget.dart';
 
 class CorridaFormPage extends ConsumerStatefulWidget {
   final int? counterId;
@@ -620,6 +621,21 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
 
   Future<void> _onSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Verificação de limite da versão gratuita
+    final isPro = ref.read(premiumProvider);
+    if (!isPro && widget.counterId == null) {
+      final corridasAsync = ref.read(corridasProvider);
+      final count = corridasAsync.maybeWhen(
+        data: (list) => list.length,
+        orElse: () => 0,
+      );
+      if (count >= 15) {
+        _showPremiumLimitDialog(context);
+        return;
+      }
+    }
+
     final repo = ref.read(corridaRepositoryProvider);
     final categoryRepo = ref.read(categoryRepositoryProvider);
     final dt = DateTime(
@@ -794,5 +810,32 @@ class _CorridaFormPageState extends ConsumerState<CorridaFormPage> {
           '${hh.toString().padLeft(2, '0')}:${mm.toString().padLeft(2, '0')}:${ss.toString().padLeft(2, '0')}';
       setState(() {});
     }
+  }
+
+  void _showPremiumLimitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.workspace_premium, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Limite Atingido'),
+          ],
+        ),
+        content: const SizedBox(
+          width: 400,
+          child: PremiumPaywallWidget(
+            customMessage: 'Você atingiu o limite da versão gratuita (máximo de 15 corridas). Adquira a versão Pro para cadastrar corridas ilimitadas!',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
   }
 }

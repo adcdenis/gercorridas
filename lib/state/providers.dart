@@ -7,6 +7,7 @@ import 'package:gercorridas/data/repositories/corrida_repository.dart';
 import 'package:gercorridas/data/repositories/category_repository.dart';
 import 'package:gercorridas/data/services/backup_service.dart';
 export 'cloud_providers.dart';
+export 'premium_provider.dart';
 
 // Database
 final databaseProvider = Provider<AppDatabase>((ref) => AppDatabase());

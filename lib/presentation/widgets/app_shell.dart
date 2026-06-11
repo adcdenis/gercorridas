@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gercorridas/state/providers.dart';
+import 'package:gercorridas/presentation/widgets/premium_paywall_widget.dart';
 import 'package:intl/intl.dart';
 
 class AppShell extends ConsumerWidget {
@@ -67,6 +68,7 @@ class AppShell extends ConsumerWidget {
       if (isWide) {
         return Scaffold(
           appBar: AppBar(title: title, actions: const [
+            _PremiumCrownButton(),
             Padding(
               padding: EdgeInsets.only(right: 8.0),
               child: _ProfileAvatar(),
@@ -139,6 +141,7 @@ class AppShell extends ConsumerWidget {
 
       return Scaffold(
         appBar: AppBar(title: title, centerTitle: false, actions: const [
+          _PremiumCrownButton(),
           Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: _ProfileAvatar(),
@@ -316,6 +319,51 @@ class _ProfileAvatar extends ConsumerWidget {
         );
       },
       orElse: () => defaultAvatar(),
+    );
+  }
+}
+
+class _PremiumCrownButton extends ConsumerWidget {
+  const _PremiumCrownButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPro = ref.watch(premiumProvider);
+    return isPro
+        ? IconButton(
+            icon: const Icon(Icons.workspace_premium, color: Colors.amber),
+            onPressed: useSimulatedBilling ? () => _showPremiumDialog(context, ref) : null,
+            tooltip: 'PlanRace Pro Ativo',
+          )
+        : IconButton(
+            icon: const Icon(Icons.workspace_premium_outlined),
+            onPressed: () => _showPremiumDialog(context, ref),
+            tooltip: 'Seja PlanRace Pro',
+          );
+  }
+
+  void _showPremiumDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.workspace_premium, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('PlanRace Pro'),
+          ],
+        ),
+        content: const SizedBox(
+          width: 400,
+          child: PremiumPaywallWidget(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
     );
   }
 }
