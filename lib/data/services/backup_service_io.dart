@@ -12,11 +12,22 @@ abstract class BackupService {
   Future<List<String>> listBackups();
   Future<String> importFromPath(String path);
   Future<String> exportPath();
+  Future<void> deleteBackup(String path);
 }
 
 class BackupServiceImpl implements BackupService {
   final AppDatabase db;
   BackupServiceImpl(this.db);
+
+  @override
+  Future<void> deleteBackup(String path) async {
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    } else {
+      throw 'Arquivo não encontrado para exclusão: $path';
+    }
+  }
 
   @override
   Future<String> export() async {

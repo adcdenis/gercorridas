@@ -23,7 +23,7 @@ class AppShell extends ConsumerWidget {
     });
     return PopScope(
       // Intercepta sempre o botão voltar para aplicar regra:
-      // voltar leva à listagem de contadores; somente nela perguntar para sair.
+      // voltar leva à listagem de corridas; somente nela perguntar para sair.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         // Se o Drawer estiver aberto, feche-o e não trate como "voltar" da página
@@ -55,22 +55,30 @@ class AppShell extends ConsumerWidget {
       },
       child: LayoutBuilder(builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
-        final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
         final cs = Theme.of(context).colorScheme;
         final title = Row(
-          children: const [
-            Icon(Icons.directions_run),
-            SizedBox(width: 8),
-            Text('PlanRace'),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: cs.onPrimary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.directions_run, size: 20, color: isWide ? cs.onPrimary : null),
+            ),
+            const SizedBox(width: 10),
+            const Text('PlanRace'),
           ],
         );
 
       if (isWide) {
+        final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
         return Scaffold(
           appBar: AppBar(title: title, actions: const [
             _PremiumCrownButton(),
+            _ThemeToggleButton(),
             Padding(
-              padding: EdgeInsets.only(right: 8.0),
+              padding: EdgeInsets.only(right: 12.0),
               child: _ProfileAvatar(),
             ),
           ]),
@@ -85,42 +93,19 @@ class AppShell extends ConsumerWidget {
                     ? NavigationRailLabelType.none
                     : NavigationRailLabelType.all,
                 useIndicator: true,
+                minWidth: 72,
+                minExtendedWidth: 200,
                 elevation: 2,
                 backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 indicatorColor: Theme.of(context).colorScheme.primaryContainer,
-                leading: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Theme.of(context).colorScheme.primaryContainer,
-                          Theme.of(context).colorScheme.secondaryContainer,
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Row(children: [
-                          Icon(Icons.directions_run),
-                          SizedBox(width: 8),
-                          Text('PlanRace', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ]),
-                        SizedBox(height: 4),
-                        Text('Organize suas corridas', style: TextStyle(fontSize: 12)),
-                      ],
+                trailing: Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: const _VersionFooter(),
                     ),
                   ),
-                ),
-                trailing: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: _VersionFooter(),
                 ),
                 destinations: [
                   NavigationRailDestination(icon: Icon(Icons.dashboard_outlined, color: cs.primary), selectedIcon: Icon(Icons.dashboard, color: cs.primary), label: const Text('Dashboard')),
@@ -132,7 +117,7 @@ class AppShell extends ConsumerWidget {
                   NavigationRailDestination(icon: Icon(Icons.payments, color: cs.primary), selectedIcon: Icon(Icons.payments, color: cs.primary), label: const Text('Finanças')),
                 ],
               ),
-              const VerticalDivider(width: 1),
+              VerticalDivider(width: 1, color: cs.outlineVariant.withValues(alpha: 0.3)),
               Expanded(child: child),
             ],
           ),
@@ -142,12 +127,13 @@ class AppShell extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(title: title, centerTitle: false, actions: const [
           _PremiumCrownButton(),
+          _ThemeToggleButton(),
           Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: _ProfileAvatar(),
           ),
         ]),
-        drawer: _AppDrawer(selectedIndex: selectedIndex, onNavigateIndex: (index) => _goToIndex(context, index)),
+        drawer: _AppDrawer(selectedIndex: _selectedIndexForLocation(GoRouterState.of(context).uri.toString()), onNavigateIndex: (index) => _goToIndex(context, index)),
         body: child,
       );
     }),
@@ -192,33 +178,69 @@ class AppShell extends ConsumerWidget {
   }
 }
 
-class _AppDrawer extends StatelessWidget {
+class _AppDrawer extends ConsumerWidget {
   final int selectedIndex;
   final ValueChanged<int> onNavigateIndex;
   const _AppDrawer({required this.selectedIndex, required this.onNavigateIndex});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPro = ref.watch(premiumProvider);
     final cs = Theme.of(context).colorScheme;
-    Widget item(IconData icon, String label, bool selected, VoidCallback onTap, Color iconColor) {
-      final bg = selected ? cs.primaryContainer : cs.surfaceContainerHigh;
-      final fg = selected ? cs.onPrimaryContainer : cs.onSurface;
+
+    Widget tile({required int index, required String label, required Widget leading, String? subtitle}) {
+      final selected = selectedIndex == index;
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: InkWell(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        child: Material(
+          color: selected ? cs.primaryContainer : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            Scaffold.maybeOf(context)?.closeDrawer();
-            onTap();
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
-            child: Row(children: [
-              Icon(icon, color: iconColor),
-              const SizedBox(width: 10),
-              Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
-            ]),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              onNavigateIndex(index);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: selected
+                    ? Border.all(color: cs.primary.withValues(alpha: 0.2))
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  leading,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 15,
+                            color: selected ? cs.onPrimaryContainer : cs.onSurface,
+                          ),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (selected)
+                    Icon(Icons.chevron_right, size: 18, color: cs.primary),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -226,44 +248,86 @@ class _AppDrawer extends StatelessWidget {
 
     return Drawer(
       child: SafeArea(
-        child: Column(children: [
-          Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [cs.primaryContainer, cs.secondaryContainer],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header do Drawer com gradiente
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [cs.primaryContainer, cs.primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cs.onPrimary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.directions_run, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('PlanRace', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isPro ? Colors.amber : Colors.white24,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isPro ? 'PRO' : 'FREE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  color: isPro ? Colors.black : Colors.white70,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text('Organize suas corridas', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-              Row(children: [
-                Icon(Icons.directions_run, size: 28),
-                SizedBox(width: 10),
-                Text('PlanRace', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-              ]),
-              SizedBox(height: 4),
-              Text('Organize suas corridas', style: TextStyle(fontSize: 12)),
-            ]),
-          ),
-          Expanded(
-            child: ListView(children: [
-              item(Icons.dashboard_outlined, 'Dashboard', selectedIndex == 0, () => onNavigateIndex(0), cs.primary),
-              item(Icons.directions_run, 'Corridas', selectedIndex == 1, () => onNavigateIndex(1), cs.secondary),
-              item(Icons.insights_outlined, 'Estatísticas', selectedIndex == 2, () => onNavigateIndex(2), cs.error),
-              item(Icons.account_tree_outlined, 'Mapa Mental', selectedIndex == 3, () => onNavigateIndex(3), cs.tertiary),
-              item(Icons.assignment_outlined, 'Relatórios', selectedIndex == 4, () => onNavigateIndex(4), cs.primary),
-              item(Icons.payments, 'Finanças', selectedIndex == 6, () => onNavigateIndex(6), cs.primary),
-              item(Icons.sync_alt, 'Backup', selectedIndex == 5, () => onNavigateIndex(5), cs.secondary),
-            ]),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: _VersionFooter(),
-          ),
-        ]),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  tile(index: 0, label: 'Dashboard', subtitle: 'Visão geral', leading: Icon(Icons.dashboard_outlined, color: cs.primary)),
+                  tile(index: 1, label: 'Corridas', subtitle: 'Seus eventos', leading: Icon(Icons.directions_run, color: cs.secondary)),
+                  tile(index: 2, label: 'Estatísticas', subtitle: 'Análise detalhada', leading: Icon(Icons.insights_outlined, color: cs.error)),
+                  tile(index: 3, label: 'Mapa Mental', subtitle: 'Planejamento visual', leading: Icon(Icons.account_tree_outlined, color: cs.tertiary)),
+                  tile(index: 4, label: 'Relatórios', subtitle: 'Exportar dados', leading: Icon(Icons.assignment_outlined, color: cs.primary)),
+                  tile(index: 6, label: 'Finanças', subtitle: 'Controle financeiro', leading: Icon(Icons.payments, color: cs.primary)),
+                  tile(index: 5, label: 'Backup', subtitle: 'Local e nuvem', leading: Icon(Icons.sync_alt, color: cs.secondary)),
+                ],
+              ),
+            ),
+            Divider(color: cs.outlineVariant.withValues(alpha: 0.3)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: _VersionFooter(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -283,9 +347,9 @@ class _VersionFooter extends ConsumerWidget {
       data: (v) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.info_outline, size: 16, color: scheme.onSurfaceVariant),
+          Icon(Icons.info_outline, size: 14, color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
           const SizedBox(width: 6),
-          Text(v, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+          Text(v, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant.withValues(alpha: 0.6))),
         ],
       ),
     );
@@ -301,10 +365,16 @@ class _ProfileAvatar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(cloudUserProvider);
     final cs = Theme.of(context).colorScheme;
-    Widget defaultAvatar() => CircleAvatar(
-          radius: 16,
-          backgroundColor: cs.surface,
-          child: Icon(Icons.account_circle, size: 20, color: cs.onSurfaceVariant),
+    Widget defaultAvatar() => Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: cs.onPrimary.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: CircleAvatar(
+            radius: 16,
+            backgroundColor: cs.onPrimary.withValues(alpha: 0.1),
+            child: Icon(Icons.person_outline, size: 18, color: cs.onPrimary.withValues(alpha: 0.7)),
+          ),
         );
 
     return userAsync.maybeWhen(
@@ -312,10 +382,16 @@ class _ProfileAvatar extends ConsumerWidget {
         if (user == null || user.photoUrl == null) {
           return defaultAvatar();
         }
-        return CircleAvatar(
-          radius: 16,
-          backgroundImage: NetworkImage(user.photoUrl!),
-          backgroundColor: cs.surface,
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: cs.onPrimary.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: CircleAvatar(
+            radius: 16,
+            backgroundImage: NetworkImage(user.photoUrl!),
+            backgroundColor: cs.surface,
+          ),
         );
       },
       orElse: () => defaultAvatar(),
@@ -323,23 +399,32 @@ class _ProfileAvatar extends ConsumerWidget {
   }
 }
 
+// Botão da coroa Pro com efeito shimmer animado
 class _PremiumCrownButton extends ConsumerWidget {
   const _PremiumCrownButton();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPro = ref.watch(premiumProvider);
-    return isPro
-        ? IconButton(
-            icon: const Icon(Icons.workspace_premium, color: Colors.amber),
-            onPressed: useSimulatedBilling ? () => _showPremiumDialog(context, ref) : null,
-            tooltip: 'PlanRace Pro Ativo',
-          )
-        : IconButton(
-            icon: const Icon(Icons.workspace_premium_outlined),
-            onPressed: () => _showPremiumDialog(context, ref),
-            tooltip: 'Seja PlanRace Pro',
-          );
+    // Em produção, só exibimos o ícone de coroa no cabeçalho se o usuário for Pro
+    if (!useSimulatedBilling && !isPro) {
+      return const SizedBox.shrink();
+    }
+    return Tooltip(
+      message: isPro ? 'Você é Pro! Obrigado pelo apoio.' : 'Seja Pro! Clique para saber mais',
+      child: isPro
+          ? _ShimmerIcon(
+              onPressed: useSimulatedBilling ? () => _showPremiumDialog(context, ref) : null,
+              child: Icon(
+                Icons.workspace_premium,
+                color: Colors.amber.shade600,
+              ),
+            )
+          : IconButton(
+              icon: const Icon(Icons.workspace_premium_outlined),
+              onPressed: useSimulatedBilling ? () => _showPremiumDialog(context, ref) : null,
+            ),
+    );
   }
 
   void _showPremiumDialog(BuildContext context, WidgetRef ref) {
@@ -363,6 +448,94 @@ class _PremiumCrownButton extends ConsumerWidget {
             child: const Text('Fechar'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Widget de ícone com shimmer para a coroa Pro
+class _ShimmerIcon extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  const _ShimmerIcon({required this.child, this.onPressed});
+
+  @override
+  State<_ShimmerIcon> createState() => _ShimmerIconState();
+}
+
+class _ShimmerIconState extends State<_ShimmerIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+              end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+              colors: const [
+                Colors.amber,
+                Colors.white,
+                Colors.amber,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.srcIn,
+          child: child,
+        );
+      },
+      child: IconButton(
+        icon: widget.child,
+        onPressed: widget.onPressed,
+      ),
+    );
+  }
+}
+
+// Botão para alternar entre tema claro e escuro
+class _ThemeToggleButton extends ConsumerWidget {
+  const _ThemeToggleButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark ||
+                  (themeMode == ThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+
+    return Tooltip(
+      message: isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro',
+      child: IconButton(
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, anim) => RotationTransition(
+            turns: anim,
+            child: FadeTransition(opacity: anim, child: child),
+          ),
+          child: Icon(
+            isDark ? Icons.light_mode : Icons.dark_mode,
+            key: ValueKey(isDark),
+          ),
+        ),
+        onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
       ),
     );
   }

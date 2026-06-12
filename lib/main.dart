@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/navigation/app_router.dart';
 import 'presentation/widgets/app_lifecycle_sync.dart';
+import 'state/providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,17 +27,19 @@ Future<void> main() async {
   runApp(const ProviderScope(child: GerCorridasApp()));
 }
 
-class GerCorridasApp extends StatelessWidget {
+class GerCorridasApp extends ConsumerWidget {
   const GerCorridasApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return AppLifecycleSync(
       child: MaterialApp.router(
         title: 'GerCorridas',
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
-        // darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.light,
+        darkTheme: AppTheme.dark(),
+        themeMode: themeMode,
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [Locale('pt', 'BR')],
         localizationsDelegates: const [

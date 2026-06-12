@@ -12,6 +12,7 @@ abstract class BackupService {
   Future<List<String>> listBackups();
   Future<String> importFromPath(String path);
   Future<String> exportPath();
+  Future<void> deleteBackup(String path);
 }
 
 class BackupServiceImpl implements BackupService {
@@ -91,5 +92,11 @@ class BackupServiceImpl implements BackupService {
   Future<String> importFromPath(String path) async {
     // Não suportado no Web
     throw 'Importação por caminho não suportada no Web';
+  }
+
+  @override
+  Future<void> deleteBackup(String path) async {
+    // Não suportado no Web
+    throw 'Exclusão de backup não suportada no Web';
   }
 }
