@@ -62,19 +62,32 @@ class DashboardPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  const Text('📊', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 8),
-                  const Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.insights_rounded, size: 20, color: cs.primary),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
                   const Spacer(),
-                  SizedBox(
-                    width: 84,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                    ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<int>(
                         isDense: true,
                         value: selectedYear,
+                        icon: const Icon(Icons.arrow_drop_down, size: 20),
                         items: [
                           for (final y in sortedYears)
-                            DropdownMenuItem(value: y, child: Text('$y'))
+                            DropdownMenuItem(value: y, child: Text('$y', style: const TextStyle(fontWeight: FontWeight.w600))),
                         ],
                         onChanged: (v) {
                           if (v != null) {
@@ -85,24 +98,25 @@ class DashboardPage extends ConsumerWidget {
                     ),
                   ),
                 ]),
-                const SizedBox(height: 8),
-                const Text('Visão geral do sistema de corridas'),
-                const SizedBox(height: 8),
-
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
+                Text(
+                  'Visão geral do seu histórico e metas',
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 14),
 
                 // Cards principais (grid: garante 2 colunas no mobile)
                 LayoutBuilder(builder: (context, constraints) {
                   final isNarrow = constraints.maxWidth < 900;
                   final cross = 2;
-                  final extent = isNarrow ? 80.0 : 78.0;
+                  final extent = isNarrow ? 82.0 : 80.0;
                   return GridView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: cross,
                       crossAxisSpacing: 8,
-                      mainAxisSpacing: 6,
+                      mainAxisSpacing: 8,
                       mainAxisExtent: extent,
                     ),
                     children: [
@@ -111,7 +125,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Total',
                         value: total,
                         color: cs.surface,
-                        emoji: '📈',
+                        icon: Icons.trending_up_rounded,
+                        iconColor: cs.primary,
                         width: double.infinity,
                         onTap: () => openFilteredList(year: selectedYear),
                       ),
@@ -120,7 +135,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Inscritas',
                         value: inscritas,
                         color: cs.surface,
-                        emoji: '👥',
+                        icon: Icons.assignment_turned_in_rounded,
+                        iconColor: Colors.blueAccent,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'inscrito', year: selectedYear),
                       ),
@@ -129,7 +145,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Concluídas',
                         value: concluidas,
                         color: cs.surface,
-                        emoji: '🏆',
+                        icon: Icons.emoji_events_rounded,
+                        iconColor: Colors.amber.shade700,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'concluida', year: selectedYear),
                       ),
@@ -138,7 +155,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Pretendo Ir',
                         value: pretendo,
                         color: cs.surface,
-                        emoji: '🎯',
+                        icon: Icons.flag_rounded,
+                        iconColor: Colors.teal,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'pretendo_ir', year: selectedYear),
                       ),
@@ -147,7 +165,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Canceladas',
                         value: canceladas,
                         color: cs.surface,
-                        emoji: '✖️',
+                        icon: Icons.cancel_rounded,
+                        iconColor: cs.error,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'cancelada', year: selectedYear),
                       ),
@@ -156,7 +175,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Não Pude Ir',
                         value: naoPude,
                         color: cs.surface,
-                        emoji: '⏱️',
+                        icon: Icons.event_busy_rounded,
+                        iconColor: Colors.deepOrange,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'nao_pude_ir', year: selectedYear),
                       ),
@@ -165,7 +185,8 @@ class DashboardPage extends ConsumerWidget {
                         title: 'Na Dúvida',
                         value: naDuvida,
                         color: cs.surface,
-                        emoji: '🤔',
+                        icon: Icons.help_outline_rounded,
+                        iconColor: Colors.purple,
                         width: double.infinity,
                         onTap: () => openFilteredList(status: 'na_duvida', year: selectedYear),
                       ),
@@ -173,12 +194,13 @@ class DashboardPage extends ConsumerWidget {
                   );
                 }),
 
-                const SizedBox.shrink(),
+                const SizedBox(height: 16),
 
                 _panelCard(
                   context,
                   title: 'Próximas Corridas Inscritas',
-                  emoji: '⏲️',
+                  icon: Icons.timer_outlined,
+                  iconColor: cs.primary,
                   child: StreamBuilder<DateTime>(
                     stream: Stream<DateTime>.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
                     initialData: DateTime.now(),
@@ -209,7 +231,8 @@ class DashboardPage extends ConsumerWidget {
                 _panelCard(
                   context,
                   title: 'Últimas Corridas Concluídas',
-                  emoji: '🏁',
+                  icon: Icons.sports_score_rounded,
+                  iconColor: Colors.amber.shade700,
                   child: Builder(builder: (context) {
                     final concluidas = filteredByYear
                         .where((c) => c.status == 'concluida')
@@ -247,55 +270,65 @@ class DashboardPage extends ConsumerWidget {
     required String title,
     required int value,
     required Color color,
-    required String emoji,
+    required IconData icon,
+    Color? iconColor,
     required double width,
     VoidCallback? onTap,
   }) {
     final cs = Theme.of(context).colorScheme;
-    // Choose an appropriate text color based on the container color for better contrast
-    // Map text color according to background for good contrast.
-    // Use theme on*Container for scheme containers, otherwise compute fallback based on brightness.
-    final Color onColor;
-    if (color == cs.primaryContainer) {
-      onColor = cs.onPrimaryContainer;
-    } else if (color == cs.secondaryContainer) {
-      onColor = cs.onSecondaryContainer;
-    } else if (color == cs.tertiaryContainer) {
-      onColor = cs.onTertiaryContainer;
-    } else if (color == cs.errorContainer) {
-      onColor = cs.onErrorContainer;
-    } else {
-      final isLightBg = ThemeData.estimateBrightnessForColor(color) == Brightness.light;
-      onColor = isLightBg ? Colors.black.withValues(alpha: 0.87) : Colors.white;
-    }
+    final effectiveIconColor = iconColor ?? cs.primary;
+
     return Card(
       elevation: 0,
-      color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
+      color: cs.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: SizedBox(
           width: width,
-          height: 64,
+          height: 72,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: Text(emoji, style: const TextStyle(fontSize: 18)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: effectiveIconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 20, color: effectiveIconColor),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: onColor)),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text('$value', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: onColor)),
+                      Text(
+                        '$value',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -307,30 +340,48 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _panelCard(BuildContext context, {required String title, required String emoji, required Widget child}) {
+  Widget _panelCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    Color? iconColor,
+    required Widget child,
+  }) {
     final cs = Theme.of(context).colorScheme;
+    final effectiveIconColor = iconColor ?? cs.primary;
+
     return Card(
       elevation: 0,
-      color: cs.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outline.withValues(alpha: 0.12))),
+      color: cs.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(emoji, style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: effectiveIconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 18, color: effectiveIconColor),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
               ),
             ]),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             child,
           ],
         ),

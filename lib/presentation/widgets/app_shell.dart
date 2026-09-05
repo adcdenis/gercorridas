@@ -34,28 +34,39 @@ class AppShell extends ConsumerWidget {
         }
         final router = GoRouter.of(context);
         final location = GoRouterState.of(context).uri.toString();
-        if (location == '/corridas') {
-          final confirm = await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Sair do aplicativo'),
-              content: const Text('Deseja realmente fechar o app?'),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-                FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Sair')),
-              ],
-            ),
-          );
-          if (confirm == true) {
-            SystemNavigator.pop();
-          }
-        } else {
+
+        // Se puder dar pop na pilha interna do roteador (ex: voltando de tela de detalhe/edição)
+        if (router.canPop()) {
+          router.pop();
+          return;
+        }
+
+        // Se estiver em outra página que não a raiz de corridas ou dashboard, retorna para /corridas
+        if (location != '/corridas' && location != '/') {
           router.go('/corridas');
+          return;
+        }
+
+        // Na tela principal, confirma saída
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Sair do aplicativo'),
+            content: const Text('Deseja realmente fechar o app?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+              FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Sair')),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          SystemNavigator.pop();
         }
       },
       child: LayoutBuilder(builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
         final cs = Theme.of(context).colorScheme;
+        final currentLocation = GoRouterState.of(context).uri.toString();
         final title = Row(
           children: [
             Container(
@@ -72,7 +83,7 @@ class AppShell extends ConsumerWidget {
         );
 
       if (isWide) {
-        final selectedIndex = _selectedIndexForLocation(GoRouterState.of(context).uri.toString());
+        final selectedIndex = _selectedIndexForLocation(currentLocation);
         return Scaffold(
           appBar: AppBar(title: title, actions: const [
             _PremiumCrownButton(),
@@ -124,6 +135,8 @@ class AppShell extends ConsumerWidget {
         );
       }
 
+      final bottomNavIndex = _bottomNavIndexForLocation(currentLocation);
+
       return Scaffold(
         appBar: AppBar(title: title, centerTitle: false, actions: const [
           _PremiumCrownButton(),
@@ -133,11 +146,68 @@ class AppShell extends ConsumerWidget {
             child: _ProfileAvatar(),
           ),
         ]),
-        drawer: _AppDrawer(selectedIndex: _selectedIndexForLocation(GoRouterState.of(context).uri.toString()), onNavigateIndex: (index) => _goToIndex(context, index)),
+        drawer: _AppDrawer(
+          selectedIndex: _selectedIndexForLocation(currentLocation),
+          onNavigateIndex: (index) => _goToIndex(context, index),
+        ),
         body: child,
+        bottomNavigationBar: bottomNavIndex != null
+            ? NavigationBar(
+                selectedIndex: bottomNavIndex,
+                onDestinationSelected: (index) => _onBottomNavTapped(context, index),
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.dashboard_outlined),
+                    selectedIcon: Icon(Icons.dashboard),
+                    label: 'Dashboard',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.directions_run_outlined),
+                    selectedIcon: Icon(Icons.directions_run),
+                    label: 'Corridas',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.insights_outlined),
+                    selectedIcon: Icon(Icons.insights),
+                    label: 'Estatísticas',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.payments_outlined),
+                    selectedIcon: Icon(Icons.payments),
+                    label: 'Finanças',
+                  ),
+                ],
+              )
+            : null,
       );
     }),
     );
+  }
+
+  int? _bottomNavIndexForLocation(String location) {
+    if (location == '/') return 0;
+    if (location.startsWith('/corridas')) return 1;
+    if (location.startsWith('/estatisticas')) return 2;
+    if (location.startsWith('/financas')) return 3;
+    return null;
+  }
+
+  void _onBottomNavTapped(BuildContext context, int index) {
+    HapticFeedback.lightImpact();
+    switch (index) {
+      case 0:
+        context.go('/');
+        break;
+      case 1:
+        context.go('/corridas');
+        break;
+      case 2:
+        context.go('/estatisticas');
+        break;
+      case 3:
+        context.go('/financas');
+        break;
+    }
   }
 
   int _selectedIndexForLocation(String location) {
@@ -152,6 +222,7 @@ class AppShell extends ConsumerWidget {
   }
 
   void _goToIndex(BuildContext context, int index) {
+    HapticFeedback.lightImpact();
     switch (index) {
       case 0:
         context.go('/');
@@ -309,15 +380,43 @@ class _AppDrawer extends ConsumerWidget {
             const SizedBox(height: 8),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Text(
+                      'PRINCIPAL',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
                   tile(index: 0, label: 'Dashboard', subtitle: 'Visão geral', leading: Icon(Icons.dashboard_outlined, color: cs.primary)),
                   tile(index: 1, label: 'Corridas', subtitle: 'Seus eventos', leading: Icon(Icons.directions_run, color: cs.secondary)),
                   tile(index: 2, label: 'Estatísticas', subtitle: 'Análise detalhada', leading: Icon(Icons.insights_outlined, color: cs.error)),
+                  tile(index: 6, label: 'Finanças', subtitle: 'Controle financeiro', leading: Icon(Icons.payments, color: cs.primary)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Divider(height: 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Text(
+                      'FERRAMENTAS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
                   tile(index: 3, label: 'Mapa Mental', subtitle: 'Planejamento visual', leading: Icon(Icons.account_tree_outlined, color: cs.tertiary)),
                   tile(index: 4, label: 'Relatórios', subtitle: 'Exportar dados', leading: Icon(Icons.assignment_outlined, color: cs.primary)),
-                  tile(index: 6, label: 'Finanças', subtitle: 'Controle financeiro', leading: Icon(Icons.payments, color: cs.primary)),
-                  tile(index: 5, label: 'Backup', subtitle: 'Local e nuvem', leading: Icon(Icons.sync_alt, color: cs.secondary)),
+                  tile(index: 5, label: 'Backup & Nuvem', subtitle: 'Local e Google Drive', leading: Icon(Icons.sync_alt, color: cs.secondary)),
                 ],
               ),
             ),

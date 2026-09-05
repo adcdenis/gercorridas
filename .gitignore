@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+android/build/
 
 # Node (scripts de conveniência)
 node_modules/

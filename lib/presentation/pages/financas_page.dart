@@ -38,137 +38,255 @@ class _FinancasPageState extends ConsumerState<FinancasPage> {
     final countersAsync = ref.watch(corridasProvider);
     final cs = Theme.of(context).colorScheme;
     final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
-    final monthLabels = const ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    final monthColors = const [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.indigo,
-      Colors.cyan,
-      Colors.lime,
-      Colors.pink,
-      Colors.amber,
-      Colors.brown,
-    ];
+    final monthLabels = const ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            const Icon(Icons.payments),
-            const SizedBox(width: 8),
-            const Text('Finanças', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
-            const Spacer(),
-            SizedBox(
-              width: 84,
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  isDense: true,
-                  value: countersAsync.maybeWhen(
-                    data: (list) {
-                      final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
-                      final selected = years.contains(_year) ? _year : (years.isNotEmpty ? years.first : _year);
-                      return selected;
-                    },
-                    orElse: () => _year,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.payments_rounded, size: 20, color: cs.primary),
+              ),
+              const SizedBox(width: 10),
+              const Text('Finanças', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isDense: true,
+                    value: countersAsync.maybeWhen(
+                      data: (list) {
+                        final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a, b) => b.compareTo(a));
+                        final selected = years.contains(_year) ? _year : (years.isNotEmpty ? years.first : _year);
+                        return selected;
+                      },
+                      orElse: () => _year,
+                    ),
+                    icon: const Icon(Icons.arrow_drop_down, size: 20),
+                    items: countersAsync.maybeWhen(
+                      data: (list) {
+                        final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a, b) => b.compareTo(a));
+                        return years.map((y) => DropdownMenuItem(value: y, child: Text(y.toString(), style: const TextStyle(fontWeight: FontWeight.w600)))).toList();
+                      },
+                      orElse: () => [DropdownMenuItem(value: _year, child: Text(_year.toString(), style: const TextStyle(fontWeight: FontWeight.w600)))],
+                    ),
+                    onChanged: (y) => setState(() => _year = y ?? _year),
                   ),
-                  items: countersAsync.maybeWhen(
-                    data: (list) {
-                      final years = list.map((c) => c.eventDate.year).toSet().toList()..sort((a,b) => b.compareTo(a));
-                      return years.map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList();
-                    },
-                    orElse: () => [DropdownMenuItem(value: _year, child: Text(_year.toString()))],
-                  ),
-                  onChanged: (y) => setState(() => _year = y ?? _year),
                 ),
               ),
-            ),
-          ]),
-          const SizedBox(height: 12),
-          const Text('Gasto total mês a mês. Filtre por ano.'),
-          const SizedBox(height: 12),
-          const SizedBox(height: 12),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Controle de investimento em inscrições mês a mês',
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 16),
           countersAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: CircularProgressIndicator(),
+            )),
             error: (e, st) => Center(child: Text('Erro ao carregar: $e')),
             data: (counters) {
               final totals = _monthlyTotals(counters);
               final maxVal = totals.fold<double>(0, (p, v) => v > p ? v : p);
               final annual = totals.fold<double>(0, (p, v) => p + v);
-              
+              final activeMonths = totals.where((v) => v > 0).length;
+              final monthlyAvg = activeMonths > 0 ? annual / activeMonths : 0.0;
 
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Card de Resumo Anual
+                  Card(
+                    color: cs.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
                         children: [
-                          Text('Gastos por mês'),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      LayoutBuilder(builder: (context, constraints) {
-                        final labelWidth = 50.0;
-                        final spacing = 8.0;
-                        final maxBarWidth = constraints.maxWidth - labelWidth - spacing;
-                        const barHeight = 24.0;
-                        return Column(
-                          children: [
-                            for (int i = 0; i < 12; i++) ...[
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: labelWidth,
-                                    child: Text(monthLabels[i], style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    width: maxVal > 0 ? (totals[i] / maxVal) * maxBarWidth : 2,
-                                    height: barHeight,
-                                    decoration: BoxDecoration(
-                                      color: monthColors[i],
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                          ],
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (int i = 0; i < 12; i++)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(color: monthColors[i], borderRadius: BorderRadius.circular(2)),
+                                Text(
+                                  'INVESTIMENTO TOTAL EM $_year',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                    color: cs.onSurfaceVariant,
+                                  ),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(currency.format(totals[i]), style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                const SizedBox(height: 6),
+                                Text(
+                                  currency.format(annual),
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    color: cs.primary,
+                                  ),
+                                ),
                               ],
                             ),
+                          ),
+                          Container(
+                            height: 44,
+                            width: 1,
+                            color: cs.outlineVariant.withValues(alpha: 0.4),
+                          ),
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'MÉDIA / MÊS ATIVO',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                currency.format(monthlyAvg),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text('Total anual: ${currency.format(annual)}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+
+                  // Gráfico de Barras Mensal com visual refinado
+                  Card(
+                    color: cs.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: cs.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.bar_chart_rounded, size: 18, color: cs.primary),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Evolução Mensal',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          LayoutBuilder(builder: (context, constraints) {
+                            const labelWidth = 36.0;
+                            const valueWidth = 84.0;
+                            const spacing = 10.0;
+                            final maxBarWidth = constraints.maxWidth - labelWidth - valueWidth - (spacing * 2);
+                            const barHeight = 18.0;
+
+                            return Column(
+                              children: [
+                                for (int i = 0; i < 12; i++) ...[
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        width: labelWidth,
+                                        child: Text(
+                                          monthLabels[i],
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: totals[i] > 0 ? FontWeight.w700 : FontWeight.w500,
+                                            color: totals[i] > 0 ? cs.onSurface : cs.onSurfaceVariant.withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: spacing),
+                                      Expanded(
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Container(
+                                            width: maxVal > 0 && totals[i] > 0
+                                                ? ((totals[i] / maxVal) * maxBarWidth).clamp(6.0, maxBarWidth)
+                                                : 2,
+                                            height: barHeight,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(6),
+                                              gradient: totals[i] > 0
+                                                  ? LinearGradient(
+                                                      colors: [
+                                                        cs.primary,
+                                                        cs.primary.withValues(alpha: 0.7),
+                                                      ],
+                                                    )
+                                                  : null,
+                                              color: totals[i] == 0
+                                                  ? cs.outlineVariant.withValues(alpha: 0.25)
+                                                  : null,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: spacing),
+                                      SizedBox(
+                                        width: valueWidth,
+                                        child: Text(
+                                          totals[i] > 0 ? currency.format(totals[i]) : '—',
+                                          textAlign: TextAlign.end,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: totals[i] > 0 ? FontWeight.w700 : FontWeight.w400,
+                                            color: totals[i] > 0 ? cs.onSurface : cs.onSurfaceVariant.withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (i < 11) const SizedBox(height: 10),
+                                ],
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),

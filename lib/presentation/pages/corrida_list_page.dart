@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
- import 'package:flutter_riverpod/flutter_riverpod.dart';
- import 'package:shared_preferences/shared_preferences.dart';
- import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +23,7 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
   static const _prefsKeyFilterCategories = 'counter_list_filter_categories';
   static const _prefsKeyFilterYear = 'counter_list_filter_year';
   static const _prefsKeyFilterStatus = 'counter_list_filter_status';
+
   String _labelForStatus(String s) {
     switch (s) {
       case 'pretendo_ir':
@@ -41,31 +42,51 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
         return s;
     }
   }
+
   IconData _iconForStatus(String s) {
     switch (s) {
       case 'pretendo_ir':
-        return Icons.event;
+        return Icons.flag_rounded;
       case 'inscrito':
-        return Icons.assignment_turned_in;
+        return Icons.assignment_turned_in_rounded;
       case 'concluida':
-        return Icons.emoji_events_outlined;
+        return Icons.emoji_events_rounded;
       case 'cancelada':
-        return Icons.cancel;
+        return Icons.cancel_rounded;
       case 'nao_pude_ir':
-        return Icons.not_interested;
+        return Icons.event_busy_rounded;
       case 'na_duvida':
-        return Icons.help_outline;
+        return Icons.help_outline_rounded;
       default:
-        return Icons.info_outline;
+        return Icons.info_outline_rounded;
     }
   }
-  
+
+  Color _colorForStatus(String s, ColorScheme cs) {
+    switch (s) {
+      case 'concluida':
+        return Colors.amber.shade700;
+      case 'inscrito':
+        return cs.primary;
+      case 'pretendo_ir':
+        return Colors.teal;
+      case 'na_duvida':
+        return Colors.purple;
+      case 'cancelada':
+        return cs.error;
+      case 'nao_pude_ir':
+        return Colors.deepOrange;
+      default:
+        return cs.outline;
+    }
+  }
+
   void _shareCounter(BuildContext context, Counter counter, DateTime effectiveDate, bool isFuture) {
     final shareText = buildShareText(counter, effectiveDate, isFuture);
     final sanitizedText = sanitizeForShare(shareText);
     final sanitizedSubject = sanitizeForShare('Corrida: ${counter.name}');
     Share.share(sanitizedText, subject: sanitizedSubject);
-  } 
+  }
 
   Future<void> _openUrl(BuildContext context, String url) async {
     final uri = Uri.tryParse(url.startsWith('http') ? url : 'https://$url');
@@ -467,17 +488,68 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
                       final matchesStatus = _statusFilter == null || c.status == _statusFilter;
                       return matchesSearch && matchesCat && matchesStatus;
                     }).toList();
-
                 filtered.sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
                 if (filtered.isEmpty) {
-                  return const Expanded(child: Center(child: Text('Nenhuma corrida encontrada.')));
+                  return Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(22),
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.directions_run_rounded, size: 52, color: scheme.primary),
+                            ),
+                            const SizedBox(height: 18),
+                            const Text(
+                              'Nenhuma corrida encontrada',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _search.isNotEmpty || _statusFilter != null || _selectedCategories.isNotEmpty
+                                  ? 'Tente remover os filtros ou alterar a busca.'
+                                  : 'Você ainda não possui corridas cadastradas para o ano de $_selectedYear.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 22),
+                            if (_search.isNotEmpty || _statusFilter != null || _selectedCategories.isNotEmpty)
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _search = '';
+                                    _searchCtrl.clear();
+                                    _statusFilter = null;
+                                    _selectedCategories.clear();
+                                  });
+                                },
+                                icon: const Icon(Icons.filter_alt_off_rounded, size: 18),
+                                label: const Text('Limpar Filtros'),
+                              )
+                            else
+                              FilledButton.icon(
+                                onPressed: () => context.go('/corrida/new'),
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Cadastrar Nova Corrida'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
                 }
 
-                // Rebuild a cada segundo para contagem dinâmica
+                // Periodicidade de 30s para contagem suave com alta performance
                 return Expanded(
                   child: StreamBuilder<DateTime>(
-                    stream: Stream<DateTime>.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
+                    stream: Stream<DateTime>.periodic(const Duration(seconds: 30), (_) => DateTime.now()),
                     initialData: DateTime.now(),
                     builder: (context, snap) {
                       final now = snap.data ?? DateTime.now();
@@ -489,251 +561,311 @@ class _CorridaListPageState extends ConsumerState<CorridaListPage> {
 
                           Widget buildCard(int index) {
                             final c = filtered[index];
-                            final baseLocal = DateTime(
+                            final effectiveDate = DateTime(
                               c.eventDate.year,
                               c.eventDate.month,
                               c.eventDate.day,
                               c.eventDate.hour,
                               c.eventDate.minute,
                               c.eventDate.second,
-                              c.eventDate.millisecond,
-                              c.eventDate.microsecond,
                             );
-                            final effectiveDate = baseLocal;
                             final isFuture = effectiveDate.isAfter(now);
-                          final hasDecimals = c.distanceKm % 1 != 0;
-                          final distLabel = hasDecimals
-                              ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
-                              : c.distanceKm.toStringAsFixed(0);
-                          final isConcluded = c.status == 'concluida' && (c.finishTime?.isNotEmpty ?? false);
-                          Duration? finishDur;
-                          if (isConcluded) {
-                            final parts = c.finishTime!.split(':');
-                            if (parts.length == 3) {
-                              final h = int.tryParse(parts[0]) ?? 0;
-                              final m = int.tryParse(parts[1]) ?? 0;
-                              final s = int.tryParse(parts[2]) ?? 0;
-                              finishDur = Duration(hours: h, minutes: m, seconds: s);
-                            } else if (parts.length == 2) {
-                              final m = int.tryParse(parts[0]) ?? 0;
-                              final s = int.tryParse(parts[1]) ?? 0;
-                              finishDur = Duration(minutes: m, seconds: s);
+                            final hasDecimals = c.distanceKm % 1 != 0;
+                            final distLabel = hasDecimals
+                                ? NumberFormat.decimalPattern('pt_BR').format(c.distanceKm)
+                                : c.distanceKm.toStringAsFixed(0);
+                            final isConcluded = c.status == 'concluida' && (c.finishTime?.isNotEmpty ?? false);
+
+                            Duration? finishDur;
+                            if (isConcluded) {
+                              final parts = c.finishTime!.split(':');
+                              if (parts.length == 3) {
+                                final h = int.tryParse(parts[0]) ?? 0;
+                                final m = int.tryParse(parts[1]) ?? 0;
+                                final s = int.tryParse(parts[2]) ?? 0;
+                                finishDur = Duration(hours: h, minutes: m, seconds: s);
+                              } else if (parts.length == 2) {
+                                final m = int.tryParse(parts[0]) ?? 0;
+                                final s = int.tryParse(parts[1]) ?? 0;
+                                finishDur = Duration(minutes: m, seconds: s);
+                              }
                             }
-                          }
-                          final paceStr = isConcluded ? computePace(finishDur, c.distanceKm) : null;
+                            final paceStr = isConcluded ? computePace(finishDur, c.distanceKm) : null;
+                            final statusColor = _colorForStatus(c.status, scheme);
+                            final statusIcon = _iconForStatus(c.status);
+                            final statusLabel = _labelForStatus(c.status);
+
+                            // Badge de contagem regressiva
+                            String? countdownBadge;
+                            if (isFuture && c.status == 'inscrito') {
+                              final diff = effectiveDate.difference(now);
+                              if (diff.inDays > 1) {
+                                countdownBadge = 'Em ${diff.inDays} dias';
+                              } else if (diff.inDays == 1) {
+                                countdownBadge = 'Amanhã!';
+                              } else if (diff.inHours > 0) {
+                                countdownBadge = 'Em ${diff.inHours}h';
+                              } else {
+                                countdownBadge = 'Hoje!';
+                              }
+                            }
+
+                            Widget metricPill({
+                              required IconData icon,
+                              required String text,
+                              Color? iconColor,
+                              bool isPrimary = false,
+                            }) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isPrimary
+                                      ? scheme.primaryContainer.withValues(alpha: 0.6)
+                                      : scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isPrimary
+                                        ? scheme.primary.withValues(alpha: 0.3)
+                                        : scheme.outlineVariant.withValues(alpha: 0.4),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      size: 14,
+                                      color: iconColor ?? (isPrimary ? scheme.primary : scheme.onSurfaceVariant),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      text,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w600,
+                                        color: isPrimary ? scheme.onPrimaryContainer : scheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
 
                             return Card(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: isConcluded
+                                      ? Colors.amber.withValues(alpha: 0.4)
+                                      : (c.status == 'inscrito'
+                                          ? scheme.primary.withValues(alpha: 0.35)
+                                          : scheme.outlineVariant.withValues(alpha: 0.35)),
+                                  width: isConcluded || c.status == 'inscrito' ? 1.4 : 1,
+                                ),
+                              ),
                               elevation: 0,
+                              color: scheme.surfaceContainerLow,
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 onTap: () => context.go('/corrida/${c.id}/edit'),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: isFuture
-                                          ? [scheme.primaryContainer.withValues(alpha: 0.6), scheme.primaryContainer.withValues(alpha: 0.3)]
-                                          : [scheme.errorContainer.withValues(alpha: 0.6), scheme.errorContainer.withValues(alpha: 0.3)],
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.all(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      // Linha Superior: Badges de Status + Categoria + Ações
                                       Row(
                                         children: [
-                                          Expanded(
-                                            child: Text(
-                                              c.name,
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w700,
-                                                height: 1.2,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
                                           Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                                              color: statusColor.withValues(alpha: 0.12),
                                               borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: statusColor.withValues(alpha: 0.25)),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Tooltip(
-                                                  message: 'Compartilhar',
-                                                  child: Material(
-                                                    color: Colors.transparent,
-                                                    child: InkWell(
-                                                      borderRadius: BorderRadius.circular(6),
-                                                      onTap: () => _shareCounter(context, c, effectiveDate, isFuture),
-                                                      child: const Padding(
-                                                        padding: EdgeInsets.all(8),
-                                                        child: Icon(
-                                                          Icons.share,
-                                                          size: 16.8,
-                                                          color: Colors.grey,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const VerticalDivider(width: 1),
-                                                Tooltip(
-                                                  message: 'Excluir',
-                                                  child: Material(
-                                                    color: Colors.transparent,
-                                                    child: InkWell(
-                                                      borderRadius: BorderRadius.circular(6),
-                                                      onTap: () async {
-                                                        final confirm = await showDialog<bool>(
-                                                          context: context,
-                                                          builder: (ctx) => AlertDialog(
-                                                            title: const Text('Excluir corrida'),
-                                                            content: const Text('Tem certeza que deseja excluir? Esta ação não pode ser desfeita.'),
-                                                            actions: [
-                                                              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-                                                              TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Excluir')),
-                                                            ],
-                                                          ),
-                                                        );
-                                                        if (confirm == true) {
-                                                          await repo.delete(c.id!);
-                                                          if (context.mounted) {
-                                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Corrida excluída')));
-                                                          }
-                                                        }
-                                                      },
-                                                      child: const Padding(
-                                                        padding: EdgeInsets.all(8),
-                                                        child: Icon(
-                                                          Icons.delete_outline,
-                                                          size: 16.8,
-                                                          color: Colors.grey,
-                                                        ),
-                                                      ),
-                                                    ),
+                                                Icon(statusIcon, size: 13, color: statusColor),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  statusLabel,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: statusColor,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Table(
-                                        columnWidths: isConcluded
-                                            ? const {0: FlexColumnWidth(), 1: FlexColumnWidth(), 2: FlexColumnWidth()}
-                                            : const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
-                                        defaultVerticalAlignment: TableCellVerticalAlignment.top,
-                                        children: [
-                                          TableRow(children: [
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Data:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                const SizedBox(height: 4),
-                                                Text(DateFormat('dd/MM/yyyy').format(effectiveDate), style: const TextStyle(fontSize: 14)),
-                                              ],
-                                            ),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Horário:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                const SizedBox(height: 4),
-                                                Text(DateFormat('HH:mm').format(effectiveDate), style: const TextStyle(fontSize: 14)),
-                                              ],
-                                            ),
-                                            if (isConcluded)
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('Tempo:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                  const SizedBox(height: 4),
-                                                  Text(c.finishTime ?? '—', style: const TextStyle(fontSize: 14)),
-                                                ],
+                                          if ((c.category?.trim().isNotEmpty ?? false)) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
-                                          ]),
-                                          TableRow(children: [
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Distância:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                const SizedBox(height: 4),
-                                                Text('$distLabel km', style: const TextStyle(fontSize: 14)),
-                                              ],
-                                            ),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Preço:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  c.price != null
-                                                      ? NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(c.price)
-                                                      : '—',
-                                                  style: const TextStyle(fontSize: 14),
+                                              child: Text(
+                                                c.category!,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: scheme.onSurfaceVariant,
                                                 ),
-                                              ],
-                                            ),
-                                            if (isConcluded)
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('Pace:', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                                                  const SizedBox(height: 4),
-                                                  Text(paceStr ?? '—', style: const TextStyle(fontSize: 12)),
-                                                ],
                                               ),
-                                          ]),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                            decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(_iconForStatus(c.status), size: 14, color: scheme.onPrimaryContainer),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  _labelForStatus(c.status),
-                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                            ),
+                                          ],
+                                          if (countdownBadge != null) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: scheme.primary.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                countdownBadge,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: scheme.primary,
                                                 ),
-                                              ],
+                                              ),
+                                            ),
+                                          ],
+                                          const Spacer(),
+                                          // Ações Rápidas (Compartilhar e Excluir)
+                                          Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(8),
+                                              onTap: () => _shareCounter(context, c, effectiveDate, isFuture),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(6),
+                                                child: Icon(Icons.share_rounded, size: 18, color: scheme.onSurfaceVariant),
+                                              ),
                                             ),
                                           ),
-                                          if ((c.registrationUrl?.isNotEmpty ?? false)) ...[
-                                            const SizedBox(width: 8),
+                                          const SizedBox(width: 2),
+                                          Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(8),
+                                              onTap: () async {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                    title: const Text('Excluir corrida'),
+                                                    content: const Text('Tem certeza que deseja excluir esta corrida?'),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+                                                      FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Excluir')),
+                                                    ],
+                                                  ),
+                                                );
+                                                if (confirm == true) {
+                                                  await repo.delete(c.id!);
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Corrida excluída')));
+                                                  }
+                                                }
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(6),
+                                                child: Icon(Icons.delete_outline_rounded, size: 18, color: scheme.error.withValues(alpha: 0.8)),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+
+                                      // Nome da corrida
+                                      Text(
+                                        c.name,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.22,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+
+                                      if ((c.description?.trim().isNotEmpty ?? false)) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          c.description!,
+                                          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      const SizedBox(height: 12),
+
+                                      // Métricas em Chips elegantes
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: [
+                                          metricPill(
+                                            icon: Icons.calendar_today_rounded,
+                                            text: '${DateFormat('dd/MM/yyyy').format(effectiveDate)} às ${DateFormat('HH:mm').format(effectiveDate)}',
+                                          ),
+                                          metricPill(
+                                            icon: Icons.straighten_rounded,
+                                            text: '$distLabel km',
+                                            isPrimary: true,
+                                          ),
+                                          if (isConcluded) ...[
+                                            metricPill(
+                                              icon: Icons.timer_outlined,
+                                              text: c.finishTime ?? '—',
+                                              iconColor: Colors.amber.shade800,
+                                            ),
+                                            if (paceStr != null)
+                                              metricPill(
+                                                icon: Icons.speed_rounded,
+                                                text: '$paceStr/km',
+                                                iconColor: Colors.amber.shade800,
+                                              ),
+                                          ],
+                                          if (c.price != null)
+                                            metricPill(
+                                              icon: Icons.payments_outlined,
+                                              text: NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(c.price),
+                                            ),
+                                          if ((c.registrationUrl?.trim().isNotEmpty ?? false))
                                             InkWell(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius: BorderRadius.circular(8),
                                               onTap: () => _openUrl(context, c.registrationUrl!),
                                               child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                                                decoration: BoxDecoration(
+                                                  color: scheme.primary.withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: scheme.primary.withValues(alpha: 0.25)),
+                                                ),
                                                 child: Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   children: [
-                                                    Icon(Icons.link, size: 14, color: scheme.onPrimaryContainer),
-                                                    const SizedBox(width: 6),
+                                                    Icon(Icons.open_in_new_rounded, size: 13, color: scheme.primary),
+                                                    const SizedBox(width: 5),
                                                     Text(
-                                                      'Link',
-                                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                                                      'Regulamento/Link',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: scheme.primary,
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                             ),
-                                          ],
                                         ],
                                       ),
                                     ],
